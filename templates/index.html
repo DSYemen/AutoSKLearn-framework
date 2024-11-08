@@ -1,0 +1,267 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ML Framework</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>ML Framework</h1>
+        <div id="upload-section">
+            <form id="upload-form">
+                <input type="file" id="file-input" accept=".csv" required>
+                <button type="submit">Upload and Process</button>
+            </form>
+            <div id="progress-bar" style="display: none;">
+                <div id="progress"></div>
+            </div>
+        </div>
+        <div id="results-section" style="display: none;">
+            <h2>Results</h2>
+            <div id="data-profile"></div>
+            <div id="model-results"></div>
+            <div id="shap-plot"></div>
+            <div id="feature-importance"></div>
+            <div id="additional-plot"></div>
+            <button id="download-model">Download Model</button>
+        </div>
+        <div id="prediction-section" style="display: none;">
+            <h2>Make Prediction</h2>
+            <form id="prediction-form">
+                <div id="input-fields"></div>
+                <button type="submit">Predict</button>
+            </form>
+            <div id="prediction-result"></div>
+        </div>
+    </div>
+    <script>
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-input');
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await axios.post('/upload', formData, {
+                    onUploadProgress: (progressEvent) => {
+                        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                        document.getElementById('progress').style.width = percentCompleted + '%';
+                    }
+                });
+                displayResults(response.data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        
+        document.getElementById('download-model').addEventListener('click', async () => {
+            window.location.href = '/download_model';
+        });
+
+        async function getModelInfo() {
+            try {
+                const response = await axios.get('/model_info');
+                const modelInfo = response.data;
+                createPredictionForm(modelInfo);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function createPredictionForm(modelInfo) {
+            const inputFields = document.getElementById('input-fields');
+            inputFields.innerHTML = '';
+            modelInfo.feature_importance.forEach((_, index) => {
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.placeholder = `Feature ${index + 1}`;
+                input.required = true;
+                inputFields.appendChild(input);
+            });
+            document.getElementById('prediction-section').style.display = 'block';
+        }
+
+        document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const inputs = document.querySelectorAll('#input-fields input');
+            const inputData = {};
+            inputs.forEach((input, index) => {
+                inputData[`feature_${index + 1}`] = parseFloat(input.value);
+            });
+
+            try {
+                const response = await axios.post('/predict', inputData);
+                document.getElementById('prediction-result').innerHTML = `Prediction: ${response.data.prediction}`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('prediction-result').innerHTML = 'Error making prediction';
+            }
+        });
+
+        function displayResults(data) {
+            document.getElementById('results-section').style.display = 'block';
+            document.getElementById('data-profile').innerHTML = `<a href="${data.profile_report}" target="_blank">View Data Profile Report</a>`;
+            document.getElementById('model-results').innerHTML = `
+                <p>Model: ${data.model_name}</p>
+                <p>${data.metric}: ${data.score.toFixed(4)}</p>
+            `;
+            document.getElementById('shap-plot').innerHTML = `<img src="${data.shap_plot}" alt="SHAP Summary Plot">`;
+
+            getModelInfo();
+        }
+    </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced ML Framework</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Advanced ML Framework</h1>
+        <div id="upload-section">
+            <form id="upload-form">
+                <input type="file" id="file-input" accept=".csv" required>
+                    <button type="submit">Upload and Process</button>
+                                </form>
+                                <div id="progress-bar" style="display: none;">
+                                    <div id="progress"></div>
+                                </div>
+                            </div>
+                            <div id="results-section" style="display: none;">
+                                <h2>Results</h2>
+                                <div id="data-profile"></div>
+                                <div id="model-info"></div>
+                                <div id="evaluation-results"></div>
+                                <div id="plots"></div>
+                                <button id="download-model">Download Model</button>
+                            </div>
+                            <div id="prediction-section" style="display: none;">
+                                <h2>Make Prediction</h2>
+                                <form id="prediction-form">
+                                    <div id="input-fields"></div>
+                                    <button type="submit">Predict</button>
+                                </form>
+                                <div id="prediction-result"></div>
+                            </div>
+                        </div>
+                        <script>
+                            document.getElementById('upload-form').addEventListener('submit', async (e) => {
+                                e.preventDefault();
+                                const fileInput = document.getElementById('file-input');
+                                const file = fileInput.files[0];
+                                const formData = new FormData();
+                                formData.append('file', file);
+
+                                try {
+                                    document.getElementById('progress-bar').style.display = 'block';
+                                    const response = await axios.post('/upload', formData, {
+                                        onUploadProgress: (progressEvent) => {
+                                            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                                            document.getElementById('progress').style.width = percentCompleted + '%';
+                                        }
+                                    });
+                                    displayResults(response.data);
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                    alert('An error occurred while processing the file.');
+                                } finally {
+                                    document.getElementById('progress-bar').style.display = 'none';
+                                }
+                            });
+
+                            function displayResults(data) {
+                                document.getElementById('results-section').style.display = 'block';
+                                document.getElementById('data-profile').innerHTML = `<a href="${data.profile_report}" target="_blank">View Data Profile Report</a>`;
+
+                                document.getElementById('model-info').innerHTML = `
+                                    <h3>Model Information</h3>
+                                    <p>Model: ${data.model_name}</p>
+                                    <p>Cross-validation scores: ${data.cv_scores.map(score => score.toFixed(4)).join(', ')}</p>
+                                    <p>Mean CV score: ${(data.cv_scores.reduce((a, b) => a + b, 0) / data.cv_scores.length).toFixed(4)}</p>
+                                `;
+
+                                document.getElementById('evaluation-results').innerHTML = `
+                                    <h3>Evaluation Results</h3>
+                                    <p>${data.metric}: ${data.score.toFixed(4)}</p>
+                                    ${data.r2_score ? `<p>R2 Score: ${data.r2_score.toFixed(4)}</p>` : ''}
+                                `;
+
+                                let plotsHtml = `
+                                    <h3>Plots</h3>
+                                    <img src="${data.shap_plot}" alt="SHAP Summary Plot">
+                                    <img src="${data.learning_curve}" alt="Learning Curve">
+                                `;
+
+                                if (data.classification_report) {
+                                    plotsHtml += `<img src="${data.classification_report}" alt="Classification Report">`;
+                                }
+                                if (data.regression_plot) {
+                                    plotsHtml += `<img src="${data.regression_plot}" alt="Regression Plot">`;
+                                }
+                                if (data.feature_importance) {
+                                    plotsHtml += `<img src="${data.feature_importance}" alt="Feature Importance">`;
+                                }
+
+                                document.getElementById('plots').innerHTML = plotsHtml;
+
+                                getModelInfo();
+                            }
+
+                            document.getElementById('download-model').addEventListener('click', () => {
+                                window.location.href = '/download_model';
+                            });
+
+                            async function getModelInfo() {
+                                try {
+                                    const response = await axios.get('/model_info');
+                                    const modelInfo = response.data;
+                                    createPredictionForm(modelInfo);
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                }
+                            }
+
+                            function createPredictionForm(modelInfo) {
+                                const inputFields = document.getElementById('input-fields');
+                                inputFields.innerHTML = '';
+                                Object.keys(modelInfo.parameters).forEach(param => {
+                                    const input = document.createElement('input');
+                                    input.type = 'number';
+                                    input.placeholder = param;
+                                    input.required = true;
+                                    inputFields.appendChild(input);
+                                });
+                                document.getElementById('prediction-section').style.display = 'block';
+                            }
+
+                            document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+                                e.preventDefault();
+                                const inputs = document.querySelectorAll('#input-fields input');
+                                const inputData = {};
+                                inputs.forEach(input => {
+                                    inputData[input.placeholder] = parseFloat(input.value);
+                                });
+
+                                try {
+                                    const response = await axios.post('/predict', inputData);
+                                    document.getElementById('prediction-result').innerHTML = `Prediction: ${response.data.prediction}`;
+                                } catch (error) {
+                                    console.error('Error:', error);
+                                    document.getElementById('prediction-result').innerHTML = 'Error making prediction';
+                                }
+                            });
+                        </script>
+                    </body>
+                    </html>
