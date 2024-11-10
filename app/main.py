@@ -1,9 +1,11 @@
 # app/main.py
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from app.core.config import settings
+from app.core.logging_config import logger
 from app.db.database import get_db
 from app.api import routes
 from app.ml.model_updater import ModelUpdater
@@ -18,6 +20,9 @@ app = FastAPI(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory=str(settings.STATIC_DIR)), name="static")
+
+# Setup Jinja2 templates
+templates = Jinja2Templates(directory="templates")
 
 # CORS middleware
 app.add_middleware(
@@ -34,6 +39,14 @@ app.include_router(
     prefix=settings.API_PREFIX,
     tags=["ml"]
 )
+
+@app.get("/")
+async def read_root(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/dashboard")
+async def dashboard(request: Request):
+    return templates.TemplateResponse("dashboard.html", {"request": request})
 
 @app.on_event("startup")
 async def startup_event():

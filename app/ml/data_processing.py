@@ -10,7 +10,7 @@ from category_encoders import TargetEncoder, SumEncoder
 from feature_engine.encoding import RareLabelEncoder
 from feature_engine.outliers import Winsorizer
 from feature_engine.datetime import DatetimeFeatures
-from pandas_profiling import ProfileReport
+from ydata_profiling import ProfileReport
 from dataclasses import dataclass
 from app.core.config import Settings
 from app.core.logging_config import logger
@@ -291,6 +291,7 @@ class AdvancedDataProcessor:
                     scaling_method = 'standard'
 
                 df[feature] = scaler.fit_transform(df[[feature]])
+                
                 scaling_stats[feature] = {
                     'method': scaling_method,
                     'skewness_before': skewness,

@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
+from typing import Optional, Dict
 from app.core.logging_config import logger
 from app.core.config import settings
 from app.ml.data_processing import AdvancedDataProcessor
@@ -62,15 +63,38 @@ class ModelUpdater:
 
     def _get_new_data(self) -> Optional[pd.DataFrame]:
         """Get new data for model update"""
-        # Implementation of data collection logic
-        pass
+        try:
+            # This is a placeholder. Replace with actual data collection logic
+            new_data_path = Path(settings.NEW_DATA_PATH)
+            if new_data_path.exists():
+                return pd.read_csv(new_data_path)
+            return None
+        except Exception as e:
+            logger.error(f"Error getting new data: {str(e)}")
+            return None
 
     def _should_replace_model(self, new_metrics: Dict[str, float]) -> bool:
         """Decide if new model should replace current model"""
-        # Implementation of model comparison logic
-        pass
+        try:
+            # This is a placeholder. Replace with actual comparison logic
+            current_metrics_path = Path(settings.CURRENT_MODEL_METRICS_PATH)
+            if not current_metrics_path.exists():
+                return True
+            
+            current_metrics = pd.read_json(current_metrics_path)
+            primary_metric = settings.PRIMARY_METRIC
+            
+            return new_metrics[primary_metric] > current_metrics[primary_metric]
+        except Exception as e:
+            logger.error(f"Error comparing models: {str(e)}")
+            return False
 
     def _deploy_new_model(self, new_model) -> None:
         """Deploy new model to production"""
-        # Implementation of model deployment logic
-        pass
+        try:
+            # This is a placeholder. Replace with actual deployment logic
+            model_path = Path(settings.MODEL_PATH)
+            new_model.save(model_path)
+            logger.info(f"New model deployed to {model_path}")
+        except Exception as e:
+            logger.error(f"Error deploying new model: {str(e)}")
