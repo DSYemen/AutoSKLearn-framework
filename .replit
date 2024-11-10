@@ -1,5 +1,5 @@
-entrypoint = "run.py"
-modules = ["python-3.10"]
+modules = ["web", "nix", "python-3.10"]
+run = "uvicorn run:app --host 0.0.0.0 --port 3000"
 
 [nix]
 channel = "stable-24_05"
@@ -11,5 +11,9 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["python3", "run.py"]
+run = ["sh", "-c", "uvicorn run:app --host 0.0.0.0 --port 3000"]
 deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80

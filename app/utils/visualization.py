@@ -1,7 +1,9 @@
+#  هذا الملف يحتوي على دالة لتحويل البي --- انه ملغي
 import matplotlib.pyplot as plt
 import seaborn as sns
 from io import BytesIO
 import base64
+
 
 def create_feature_importance_plot(feature_importance):
     plt.figure(figsize=(10, 6))
@@ -18,10 +20,13 @@ def create_feature_importance_plot(feature_importance):
 
     return f"data:image/png;base64,{plot_data}"
 
+
 def create_learning_curve_plot(train_sizes, train_scores, test_scores):
     plt.figure(figsize=(10, 6))
     plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
-    plt.plot(train_sizes, test_scores.mean(axis=1), label='Cross-validation score')
+    plt.plot(train_sizes,
+             test_scores.mean(axis=1),
+             label='Cross-validation score')
     plt.title('Learning Curve')
     plt.xlabel('Training examples')
     plt.ylabel('Score')

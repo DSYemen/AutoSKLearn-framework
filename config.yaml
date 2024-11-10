@@ -1,0 +1,28 @@
+# config.yaml
+app:
+  name: "ML Framework"
+  version: "1.0.0"
+  debug: true
+
+model:
+  time_limit: 3600
+  cv_folds: 5
+  test_size: 0.2
+  random_state: 42
+
+optimization:
+  n_trials: 20
+  timeout: 600
+
+preprocessing:
+  imputation:
+    numeric_strategy: "knn"
+    categorical_strategy: "most_frequent"
+  scaling:
+    method: "standard"
+  feature_selection:
+    max_features: 20
+
+monitoring:
+  update_interval: 86400  # 24 hours
+  performance_threshold: 0.8

@@ -1,8 +1,8 @@
 import uvicorn
 from app.main import app
-from config import settings
+from app.core.config import settings
 import threading
-from app.model_updater import start_model_updater
+from app.ml.model_updater import start_model_updater
 
 if __name__ == "__main__":
     # Start model updater in a separate thread
