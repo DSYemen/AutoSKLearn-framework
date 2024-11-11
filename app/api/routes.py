@@ -44,7 +44,6 @@ model_monitor = ModelMonitor("system")
 processing_status: Dict[str, Any] = {}
 websocket_connections: Dict[str, List[WebSocket]] = {}
 
-
 @router.post("/train", response_model=ModelResponse)
 async def train_model(
     file: UploadFile = File(...),
@@ -134,7 +133,6 @@ async def train_model(
             db.commit()
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/predict/{model_id}")
 async def predict(
     model_id: str,
@@ -177,7 +175,6 @@ async def predict(
         logger.error(f"Prediction error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/models/{model_id}/performance")
 async def get_model_performance(
     model_id: str,
@@ -217,7 +214,6 @@ async def get_model_performance(
         logger.error(f"Error fetching performance data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/models/{model_id}/update")
 async def update_model(
     model_id: str,
@@ -225,7 +221,7 @@ async def update_model(
     db: Session = Depends(get_db)
 ):
     """
-    تحديث النموذج ببيانات جديدة
+    تحديث النموذج ببيانات جد
     """
     try:
         # التحقق من وجود النموذج
@@ -235,7 +231,7 @@ async def update_model(
         if not model_record:
             raise HTTPException(status_code=404, detail="Model not found")
 
-        # معالجة البيانات الجديدة
+        # معالجة لبيانات الجديدة
         processor = AdvancedDataProcessor()
         processed_data = await processor.process_data(file)
 
@@ -263,13 +259,11 @@ async def update_model(
         logger.error(f"Error updating model: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/models", response_model=ModelListResponse)
 async def list_models(
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
-    sort_by: str = Query("created_at", enum=[
-                         "created_at", "accuracy", "name"]),
+    sort_by: str = Query("created_at", enum=["created_at", "accuracy", "name"]),
     order: str = Query("desc", enum=["asc", "desc"]),
     db: Session = Depends(get_db)
 ):
@@ -280,7 +274,7 @@ async def list_models(
         models = db.query(ModelRecord).order_by(
             desc(sort_by) if order == "desc" else asc(sort_by)
         ).offset(skip).limit(limit).all()
-
+        
         return ModelListResponse(
             models=[ModelResponse.from_orm(model) for model in models],
             total=db.query(ModelRecord).count(),
@@ -291,35 +285,32 @@ async def list_models(
         logger.error(f"Error listing models: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.delete("/models/{model_id}")
 async def delete_model(model_id: str, db: Session = Depends(get_db)):
     """حذف نموذج"""
     try:
         # التحقق من وجود النموذج
-        model = db.query(ModelRecord).filter(
-            ModelRecord.model_id == model_id).first()
+        model = db.query(ModelRecord).filter(ModelRecord.model_id == model_id).first()
         if not model:
             raise HTTPException(status_code=404, detail="Model not found")
 
         # حذف النموذج من قاعدة البيانات
         db.delete(model)
-
+        
         # حذف الملفات المرتبطة
         model_path = settings.MODELS_DIR / model_id
         if model_path.exists():
             shutil.rmtree(model_path)
-
+            
         # حذف من الذاكرة المؤقتة
         await cache_manager.clear_model_cache(model_id)
-
+        
         db.commit()
         return {"message": "Model deleted successfully"}
 
     except Exception as e:
         logger.error(f"Error deleting model: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/models/{model_id}/download")
 async def download_model(model_id: str, db: Session = Depends(get_db)):
@@ -340,14 +331,12 @@ async def download_model(model_id: str, db: Session = Depends(get_db)):
         logger.error(f"Error downloading model: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/models/{model_id}/metrics")
 async def get_model_metrics(model_id: str, db: Session = Depends(get_db)):
     """الحصول على مقاييس أداء النموذج"""
     try:
         # التحقق من وجود النموذج
-        model = db.query(ModelRecord).filter(
-            ModelRecord.model_id == model_id).first()
+        model = db.query(ModelRecord).filter(ModelRecord.model_id == model_id).first()
         if not model:
             raise HTTPException(status_code=404, detail="Model not found")
 
@@ -365,7 +354,6 @@ async def get_model_metrics(model_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error getting model metrics: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/models/{model_id}/predictions/history")
 async def get_prediction_history(
@@ -388,8 +376,7 @@ async def get_prediction_history(
         ).count()
 
         return PredictionHistoryResponse(
-            predictions=[PredictionResponse.from_orm(
-                pred) for pred in predictions],
+            predictions=[PredictionResponse.from_orm(pred) for pred in predictions],
             total=total,
             page=skip // limit + 1,
             pages=(total + limit - 1) // limit
@@ -399,21 +386,18 @@ async def get_prediction_history(
         logger.error(f"Error getting prediction history: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/data/profile")
 async def get_data_profile(file: UploadFile = File(...)):
     """تحليل وتوصيف البيانات"""
     try:
         # قراءة البيانات
-        df = pd.read_csv(file.file) if file.filename.endswith(
-            '.csv') else pd.read_parquet(file.file)
-
+        df = pd.read_csv(file.file) if file.filename.endswith('.csv') else pd.read_parquet(file.file)
+        
         # إنشاء تقرير التحليل
         profile = ProfileReport(df, title="Data Profile Report")
-
+        
         # حفظ التقرير
-        report_path = settings.REPORTS_DIR / \
-            f"profile_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+        report_path = settings.REPORTS_DIR / f"profile_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
         profile.to_file(report_path)
 
         return DataProfileResponse(
@@ -426,7 +410,6 @@ async def get_data_profile(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Error profiling data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/models/{model_id}/optimize")
 async def optimize_model(
@@ -443,9 +426,9 @@ async def optimize_model(
 
         # إنشاء مهمة التحسين
         job_id = f"optimize_{model_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-
+        
         # بدء عملية التحسين في الخلفية
-        BackgroundTasks.add_task(
+        background_tasks.add_task(
             optimize_model_task,
             model_id=model_id,
             config=optimization_config,
@@ -460,7 +443,6 @@ async def optimize_model(
     except Exception as e:
         logger.error(f"Error starting model optimization: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/models/{model_id}/cross-validate")
 async def cross_validate_model(
@@ -488,15 +470,13 @@ async def cross_validate_model(
         logger.error(f"Error in cross validation: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/data/validate")
 async def validate_data(file: UploadFile = File(...)):
     """التحقق من صحة البيانات"""
     try:
         # قراءة البيانات
-        df = pd.read_csv(file.file) if file.filename.endswith(
-            '.csv') else pd.read_parquet(file.file)
-
+        df = pd.read_csv(file.file) if file.filename.endswith('.csv') else pd.read_parquet(file.file)
+        
         # التحقق من البيانات
         validator = DataValidator()
         validation_result = await validator.validate_data(df)
@@ -507,7 +487,6 @@ async def validate_data(file: UploadFile = File(...)):
         logger.error(f"Error validating data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/data/preprocess")
 async def preprocess_data(
     preprocessing_config: Dict[str, Any],
@@ -516,16 +495,14 @@ async def preprocess_data(
     """معالجة البيانات"""
     try:
         # قراءة البيانات
-        df = pd.read_csv(file.file) if file.filename.endswith(
-            '.csv') else pd.read_parquet(file.file)
-
+        df = pd.read_csv(file.file) if file.filename.endswith('.csv') else pd.read_parquet(file.file)
+        
         # معالجة البيانات
         processor = AdvancedDataProcessor()
         processed_data = await processor.process_data(df, preprocessing_config)
 
         # حفظ البيانات المعالجة
-        output_path = settings.REPORTS_DIR / \
-            f"processed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
+        output_path = settings.REPORTS_DIR / f"processed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.parquet"
         processed_data.processed_df.to_parquet(output_path)
 
         return {
@@ -538,14 +515,12 @@ async def preprocess_data(
         logger.error(f"Error preprocessing data: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.get("/models/{model_id}/report")
 async def generate_model_report(model_id: str, db: Session = Depends(get_db)):
     """إنشاء تقرير شامل عن النموذج"""
     try:
         # التحقق من وجود النموذج
-        model = db.query(ModelRecord).filter(
-            ModelRecord.model_id == model_id).first()
+        model = db.query(ModelRecord).filter(ModelRecord.model_id == model_id).first()
         if not model:
             raise HTTPException(status_code=404, detail="Model not found")
 
@@ -566,7 +541,6 @@ async def generate_model_report(model_id: str, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error generating model report: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/models/{model_id}/export")
 async def export_model(
@@ -599,7 +573,6 @@ async def export_model(
         logger.error(f"Error exporting model: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/predict/batch")
 async def batch_predict(
     model_id: str,
@@ -609,7 +582,6 @@ async def batch_predict(
     """تنفيذ تنبؤات متعددة"""
     pass
 
-
 @router.post("/models/batch/train")
 async def batch_train(
     files: List[UploadFile] = File(...),
@@ -617,7 +589,6 @@ async def batch_train(
 ):
     """تدريب عدة نماذج"""
     pass
-
 
 @router.post("/models/{model_id}/version")
 async def create_model_version(
@@ -628,7 +599,6 @@ async def create_model_version(
     """إنشاء نسخة من النموذج"""
     pass
 
-
 @router.get("/models/{model_id}/versions")
 async def list_model_versions(
     model_id: str,
@@ -636,7 +606,6 @@ async def list_model_versions(
 ):
     """قائمة نسخ النموذج"""
     pass
-
 
 @router.post("/models/{model_id}/rollback")
 async def rollback_model(
@@ -646,7 +615,6 @@ async def rollback_model(
 ):
     """سترجاع نسخة سابقة"""
     pass
-
 
 @router.get("/models/{model_id}/drift")
 async def check_model_drift(
@@ -658,7 +626,6 @@ async def check_model_drift(
     """فحص انحراف النموذج"""
     pass
 
-
 @router.get("/models/{model_id}/alerts")
 async def get_model_alerts(
     model_id: str,
@@ -668,51 +635,35 @@ async def get_model_alerts(
     """الحصول على تنبيهات النموذج"""
     pass
 
-
 @router.post("/models/compare")
 async def compare_models(
     model_ids: List[str],
-    metric: str = Query(
-        "accuracy", enum=["accuracy", "f1", "precision", "recall"]),
+    metric: str = Query("accuracy", enum=["accuracy", "f1", "precision", "recall"]),
     db: Session = Depends(get_db)
 ):
     """مقارنة عدة نماذج"""
     pass
 
-
 @router.get("/stats")
 async def get_stats(db: Session = Depends(get_db)):
     """الحصول على إحصائيات النظام"""
     try:
-        # الحصول على عدد النماذج النشطة
-        active_models = await get_active_models_count(db)
-
-        # الحصول على إجمالي التنبؤات
-        total_predictions = await get_total_predictions_count(db)
-
-        # الحصول على متوسط الدقة
-        avg_accuracy = await get_average_accuracy(db)
-
-        # الحصول على معدل التنبؤات في الساعة
-        predictions_per_hour = await get_predictions_per_hour(db)
-
-        # حساب صحة النظام (يمكن تخصيص هذا بناءً على معايير مختلفة)
-        system_health = 100  # قيمة افتراضية
-
         return {
-            "active_models": active_models,
-            "total_predictions": total_predictions,
-            "avg_accuracy": avg_accuracy,
-            "system_health": system_health,
-            "predictions_per_hour": predictions_per_hour
+            "active_models": await get_active_models_count(db),
+            "total_predictions": await get_total_predictions_count(db),
+            "avg_accuracy": await get_average_accuracy(db),
+            "system_health": 100,
+            "predictions_per_hour": await get_predictions_per_hour(db)
         }
     except Exception as e:
         logger.error(f"Error getting stats: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error getting system stats: {str(e)}"
-        )
-
+        return {
+            "active_models": 0,
+            "total_predictions": 0,
+            "avg_accuracy": 0,
+            "system_health": 100,
+            "predictions_per_hour": 0
+        }
 
 @router.post("/upload")
 async def upload_file(
@@ -739,7 +690,7 @@ async def upload_file(
 
         # حفظ الملف مؤقتاً
         file_path = settings.UPLOAD_DIR / f"{job_id}_{file.filename}"
-
+        
         try:
             with open(file_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
@@ -786,9 +737,92 @@ async def upload_file(
             detail=f"Error uploading file: {str(e)}"
         )
 
+@router.post("/process/{job_id}")
+async def process_data(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """بدء معالجة البيانات"""
+    try:
+        # البحث عن مسار الملف المحمل
+        uploaded_files = list(settings.UPLOAD_DIR.glob(f"{job_id}_*"))
+        
+        if not uploaded_files:
+            logger.error(f"No uploaded file found for job {job_id}")
+            raise HTTPException(
+                status_code=404,
+                detail="لم يتم العثور على الملف المحمل"
+            )
+            
+        file_path = uploaded_files[0]
+        logger.info(f"Found uploaded file: {file_path}")
+
+        # التحقق من وجود المجلدات المطلوبة
+        settings.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        settings.MODELS_DIR.mkdir(parents=True, exist_ok=True)
+        settings.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+        # إنشاء سجل في قاعدة البيانات
+        training_job = TrainingJob(
+            model_id=job_id,
+            status="processing",
+            config={
+                "filename": file_path.name,
+                "start_time": datetime.utcnow().isoformat()
+            }
+        )
+        db.add(training_job)
+        db.commit()
+        logger.info(f"Created training job record for {job_id}")
+
+        # تحديث حالة المعالجة
+        update_processing_status(
+            job_id=job_id,
+            step="data-loading",
+            progress=10,
+            message="بدء معالجة البيانات..."
+        )
+
+        # بدء المعالجة في الخلفية
+        background_tasks.add_task(
+            process_uploaded_file,
+            file_path=file_path,
+            job_id=job_id,
+            db=db
+        )
+        
+        logger.info(f"Started processing task for job {job_id}")
+        return {
+            "status": "success",
+            "message": "بدأت معالجة البيانات",
+            "job_id": job_id
+        }
+
+    except HTTPException as e:
+        logger.error(f"HTTP error in process_data: {str(e)}")
+        raise e
+    except Exception as e:
+        logger.error(f"Error in process_data: {str(e)}")
+        # تحديث حالة المهمة في قاعدة البيانات
+        try:
+            training_job = db.query(TrainingJob).filter(
+                TrainingJob.model_id == job_id
+            ).first()
+            if training_job:
+                training_job.status = "failed"
+                training_job.error_message = str(e)
+                training_job.completed_at = datetime.utcnow()
+                db.commit()
+        except Exception as db_error:
+            logger.error(f"Error updating training job status: {str(db_error)}")
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"فشل في بدء معالجة البيانات: {str(e)}"
+        )
+
 # Utility functions
-
-
 def start_model_monitoring(model_id: str, data: pd.DataFrame):
     """Start monitoring for a model"""
     try:
@@ -796,7 +830,6 @@ def start_model_monitoring(model_id: str, data: pd.DataFrame):
         monitor.initialize_monitoring(data)
     except Exception as e:
         logger.error(f"Monitoring error: {str(e)}")
-
 
 def log_prediction(db: Session, prediction: float, input_data: Dict[str, Any]):
     """Log prediction to database"""
@@ -811,35 +844,38 @@ def log_prediction(db: Session, prediction: float, input_data: Dict[str, Any]):
     except Exception as e:
         logger.error(f"Error logging prediction: {str(e)}")
 
-
 async def get_active_models_count(db: Session) -> int:
-    return db.query(ModelRecord).filter(ModelRecord.status == "active").count()
-
+    """الحصول على عدد النماذج النشطة"""
+    try:
+        return db.query(ModelRecord).filter(ModelRecord.status == "active").count()
+    except Exception as e:
+        logger.error(f"Error getting active models count: {str(e)}")
+        return 0
 
 async def get_total_predictions_count(db: Session) -> int:
-    return db.query(PredictionLog).count()
-
+    """الحصول على إجمالي عدد التنبؤات"""
+    try:
+        return db.query(PredictionLog).count()
+    except Exception as e:
+        logger.error(f"Error getting total predictions count: {str(e)}")
+        return 0
 
 async def get_average_accuracy(db: Session) -> float:
-    result = db.query(
-        func.avg(ModelRecord.metrics['accuracy'].cast(Float))).scalar()
+    result = db.query(func.avg(ModelRecord.metrics['accuracy'].cast(Float))).scalar()
     return result or 0.0
-
 
 async def get_predictions_per_hour(db: Session) -> int:
     hour_ago = datetime.utcnow() - timedelta(hours=1)
     return db.query(PredictionLog).filter(PredictionLog.timestamp >= hour_ago).count()
 
-
 async def process_uploaded_file(file_path: Path, job_id: str, db: Session):
     """معالجة الملف المحمل وتدريب النموذج"""
     try:
         logger.info(f"Starting file processing for job {job_id}")
-
+        
         # تحديث حالة المعالجة - تحميل البيانات
-        update_processing_status(
-            job_id, "data-loading", 10, "جاري تحميل البيانات...")
-
+        update_processing_status(job_id, "data-loading", 10, "جاري تحميل البيانات...")
+        
         # قراءة وتحليل البيانات
         if file_path.suffix == '.csv':
             df = pd.read_csv(file_path)
@@ -848,40 +884,51 @@ async def process_uploaded_file(file_path: Path, job_id: str, db: Session):
         else:
             df = pd.read_parquet(file_path)
 
-        logger.info(f"Data loaded successfully for job {job_id}")
+        logger.info(f"Successfully loaded data for job {job_id}")
 
         # معالجة البيانات
-        update_processing_status(
-            job_id, "preprocessing", 30, "جاري المعالجة لأولية...")
+        update_processing_status(job_id, "preprocessing", 30, "جاري المعالجة لأولية...")
         processor = AdvancedDataProcessor()
         processed_data = await processor.process_data(df)
 
         logger.info(f"Data preprocessing completed for job {job_id}")
 
-        # باقي الكود كما هو...
+        # باقي العمليات...
 
     except Exception as e:
         logger.error(f"Error processing file for job {job_id}: {str(e)}")
         update_processing_status(
-            job_id, "failed", 0, f"فشل المعالجة: {str(e)}")
+            job_id=job_id,
+            step="failed",
+            progress=0,
+            message=f"فشل المعالجة: {str(e)}"
+        )
         # تحديث حالة المهمة في قاعدة البيانات
-        training_job = db.query(TrainingJob).filter(
-            TrainingJob.model_id == job_id).first()
-        if training_job:
-            training_job.status = "failed"
-            training_job.error_message = str(e)
-            db.commit()
+        try:
+            training_job = db.query(TrainingJob).filter(
+                TrainingJob.model_id == job_id
+            ).first()
+            if training_job:
+                training_job.status = "failed"
+                training_job.error_message = str(e)
+                training_job.completed_at = datetime.utcnow()
+                db.commit()
+        except Exception as db_error:
+            logger.error(f"Error updating training job status: {str(db_error)}")
     finally:
         # حذف الملف المؤقت
-        if file_path.exists():
-            file_path.unlink()
-
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                logger.info(f"Cleaned up temporary file for job {job_id}")
+        except Exception as e:
+            logger.error(f"Error cleaning up file: {str(e)}")
 
 def update_processing_status(
-    job_id: str,
-    step: str,
-    progress: int,
-    message: str,
+    job_id: str, 
+    step: str, 
+    progress: int, 
+    message: str, 
     result_url: str = None,
     additional_data: Dict[str, Any] = None
 ):
@@ -894,22 +941,26 @@ def update_processing_status(
         "timestamp": datetime.utcnow().isoformat(),
         "completed_steps": []
     }
-
+    
     # تحديث الخطوات المكتملة
-    steps = ['data-loading', 'preprocessing',
-             'model-selection', 'training', 'evaluation']
-    current_step_index = steps.index(step)
-    status_update['completed_steps'] = steps[:current_step_index]
+    steps = ['data-loading', 'preprocessing', 'model-selection', 'training', 'evaluation', 'completed', 'failed']
+    if step not in ['failed', 'completed']:
+        try:
+            current_step_index = steps.index(step)
+            status_update['completed_steps'] = steps[:current_step_index]
+        except ValueError:
+            logger.error(f"Invalid step: {step}")
+            status_update['completed_steps'] = []
 
     if result_url:
         status_update["result_url"] = result_url
-
+    
     if additional_data:
         status_update.update(additional_data)
 
     # تحديث الحالة في الذاكرة
     processing_status[job_id] = status_update
-
+    
     # بث التحديث عبر WebSocket
     for connection in websocket_connections.get(job_id, []):
         asyncio.create_task(connection.send_json(status_update))

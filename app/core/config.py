@@ -52,6 +52,9 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     
+    # Database sqlite
+    DATABASE_URL: str = "sqlite:///ml_framework.db"
+    
     # المسارات
     BASE_DIR: Path = Path(__file__).parent.parent.parent
     STATIC_DIR: Path = BASE_DIR / "static"

@@ -121,7 +121,7 @@ function formatFileSize(bytes) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// إضافة الدوال المفقودة لمعالجة تقدم التحميل
+// إضافة الدوال المفقودة لمعالجة تقدم لتحميل
 function showUploadProgress() {
     const uploadProgress = document.getElementById('uploadProgress');
     if (uploadProgress) {
@@ -156,37 +156,27 @@ async function uploadFile() {
         const formData = new FormData();
         formData.append('file', appState.selectedFile);
 
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/v1/upload', true);
+        const response = await fetch('/api/v1/upload', {
+            method: 'POST',
+            body: formData
+        });
 
-        // معالجة تقدم التحميل
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const progress = (event.loaded / event.total) * 100;
-                updateProgress(progress);
-            }
-        };
+        if (!response.ok) throw new Error('فشل تحميل الملف');
 
-        // معالجة اكتمال التحميل
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                const result = JSON.parse(xhr.responseText);
-                showProcessingSection(result.job_id);
-            } else {
-                throw new Error('فشل تحميل الملف');
-            }
-        };
-
-        // معالجة الأخطاء
-        xhr.onerror = function() {
-            throw new Error('حدث خطأ في الاتصال');
-        };
-
-        xhr.send(formData);
+        const result = await response.json();
+        appState.jobId = result.job_id;
+        
+        // إخفاء زر التحميل وإظهار زر المعالجة
+        document.getElementById('uploadButton').classList.add('hidden');
+        document.getElementById('processButton').classList.remove('hidden');
+        
+        hideUploadProgress();
+        showSuccess('تم تحميل الملف بنجاح');
 
     } catch (error) {
         showError('حدث خطأ أثناء تحميل الملف: ' + error.message);
         hideUploadProgress();
+    } finally {
         appState.processing = false;
     }
 }
@@ -288,7 +278,7 @@ function showProcessingSection(jobId) {
 // إضافة دالة تحديث واجهة المعالجة
 function updateProcessingUI(data) {
     // تحديث شريط التقدم
-    const progressBar = document.getElementById('progressBar');
+    const progressBar = document.getElementById('processingProgressBar');
     const progressPercentage = document.getElementById('progressPercentage');
     
     if (progressBar) {
@@ -306,7 +296,7 @@ function updateProcessingUI(data) {
         
         if (stepName === data.step) {
             indicator.textContent = '🔄'; // جاري التنفيذ
-        } else if (data.progress > getStepProgress(stepName)) {
+        } else if (data.completed_steps.includes(stepName)) {
             indicator.textContent = '✅'; // مكتمل
         }
     });
@@ -333,10 +323,7 @@ function getStepProgress(stepName) {
 
 // معالجة اكتمال المعالجة
 function handleProcessingComplete(resultUrl) {
-    // إظهار رسالة نجاح
-    showSuccess('تم اكتمال المعالجة بنجاح');
-    
-    // الانتقال إلى صفحة النتائج
+    showSuccess('تم اكتمال معالجة البيانات بنجاح');
     if (resultUrl) {
         window.location.href = resultUrl;
     }
@@ -345,7 +332,6 @@ function handleProcessingComplete(resultUrl) {
 // معالجة أخطاء المعالجة
 function handleProcessingError(message) {
     showError(message);
-    // إعادة عرض قسم التحميل
     document.getElementById('processingSection').classList.add('hidden');
     document.getElementById('uploadSection').classList.remove('hidden');
 }
@@ -457,4 +443,53 @@ function updateStatsDisplay(stats) {
             element.textContent = value;
         }
     }
+}
+
+// إضافة دالة معالجة البيانات
+async function processData() {
+    if (!appState.jobId || appState.processing) return;
+
+    try {
+        appState.processing = true;
+        document.getElementById('uploadSection').classList.add('hidden');
+        document.getElementById('processingSection').classList.remove('hidden');
+        
+        // إنشاء اتصال WebSocket لمتابعة حالة المعالجة
+        setupProcessingWebSocket(appState.jobId);
+
+        // بدء المعالجة
+        const response = await fetch(`/api/v1/process/${appState.jobId}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) throw new Error('فشل بدء المعالجة');
+
+    } catch (error) {
+        showError('حدث خطأ أثناء معالجة البيانات: ' + error.message);
+        document.getElementById('processingSection').classList.add('hidden');
+        document.getElementById('uploadSection').classList.remove('hidden');
+    }
+}
+
+// إضافة مستمع الحدث لزر المعالجة
+document.getElementById('processButton')?.addEventListener('click', processData);
+
+// إضافة دالة setupProcessingWebSocket
+function setupProcessingWebSocket(jobId) {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const processingSocket = new WebSocket(`${wsProtocol}//${window.location.host}/ws/processing/${jobId}`);
+    
+    processingSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateProcessingUI(data);
+    };
+
+    processingSocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        showError('حدث خطأ في الاتصال');
+    };
+
+    processingSocket.onclose = () => {
+        console.log('WebSocket connection closed');
+    };
 }

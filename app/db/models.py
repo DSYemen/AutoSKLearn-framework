@@ -9,11 +9,18 @@ class ModelRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     model_id = Column(String, unique=True, index=True)
     model_type = Column(String)
+    status = Column(String, default="active")
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, onupdate=func.now())
     parameters = Column(JSON)
     metrics = Column(JSON)
     feature_importance = Column(JSON)
+    problem_type = Column(String)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if 'status' not in kwargs:
+            self.status = "active"
 
 class PredictionLog(Base):
     __tablename__ = "predictions"
@@ -24,6 +31,7 @@ class PredictionLog(Base):
     input_data = Column(JSON)
     prediction = Column(Float)
     actual = Column(Float, nullable=True)
+    confidence = Column(Float, nullable=True)
 
 class MonitoringLog(Base):
     __tablename__ = "monitoring"

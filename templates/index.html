@@ -1,290 +1,107 @@
 {% extends "base.html" %}
-{% block title %}ML Framework - الرئيسية{% endblock %}
+{% block title %}ML Framework{% endblock %}
 
 {% block content %}
 <div class="space-y-8">
-    <!-- قسم الترحيب -->
-    <div class="text-center py-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg shadow-xl">
-        <h1 class="text-4xl font-bold text-white mb-4">مرحباً بك في ML Framework</h1>
-        <p class="text-xl text-gray-100 max-w-2xl mx-auto">
-            منصة متكاملة للتعلم الآلي تمكنك من تدريب وإدارة ومراقبة نماذج التعلم الآلي بسهولة
-        </p>
-    </div>
-
-    <!-- قسم المميزات -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-robot text-2xl text-indigo-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">تدريب تلقائي</h3>
-            <p class="text-gray-600">
-                اختيار وتدريب أفضل نموذج للبيانات الخاصة بك تلقائياً
-            </p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-chart-line text-2xl text-purple-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">مراقبة مباشرة</h3>
-            <p class="text-gray-600">
-                مراقبة أداء النماذج في الوقت الفعلي مع تنبيهات تلقائية
-            </p>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-cogs text-2xl text-blue-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">معالجة متقدمة</h3>
-            <p class="text-gray-600">
-                معالجة تلقائية للبيانات وهندسة المميزات
-            </p>
-        </div>
-    </div>
-
-    <!-- قسم تحميل البيانات -->
-    <div class="bg-white rounded-lg shadow-lg p-8">
-        <h2 class="text-2xl font-bold mb-6">ابدأ الآن</h2>
+    <!-- قسم التحميل -->
+    <div id="uploadSection" class="bg-white shadow-lg rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-4">تحميل البيانات</h2>
         
-        <!-- منطقة تحميل الملف -->
-        <div id="uploadSection" class="space-y-4">
-            <div id="dropZone" 
-                 class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-colors duration-200 hover:border-indigo-500">
-                <input type="file" 
-                       id="fileInput" 
-                       class="hidden" 
-                       accept=".csv,.xlsx,.parquet" />
-                
-                <div class="space-y-4">
-                    <div class="flex justify-center">
-                        <i class="fas fa-cloud-upload-alt text-4xl text-gray-400"></i>
-                    </div>
-                    <div>
-                        <button id="selectFileButton" 
-                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
-                            اختر ملف
-                        </button>
-                        <p class="mt-2 text-sm text-gray-600">
-                            أو قم بسحب وإفلات الملف هنا
-                        </p>
-                    </div>
-                    <div class="text-xs text-gray-500">
-                        CSV, XLSX, أو Parquet (الحد الأقصى: 100 MB)
-                    </div>
-                </div>
-            </div>
+        <!-- منطقة السحب والإفلات -->
+        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-500 transition-colors duration-200">
+            <input type="file" id="fileInput" class="hidden" accept=".csv,.xlsx,.parquet">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <p class="text-gray-600">اسحب وأفلت الملف هنا أو</p>
+            <button id="selectFileButton" class="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                اختر ملفاً
+            </button>
+        </div>
 
-            <!-- عرض الملف المحدد -->
-            <div id="fileDisplay" class="hidden">
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div class="flex items-center space-x-4">
-                        <i class="fas fa-file-alt text-indigo-600"></i>
-                        <div>
-                            <p id="fileName" class="font-medium"></p>
-                            <p id="fileSize" class="text-sm text-gray-600"></p>
-                        </div>
-                    </div>
-                    <button onclick="removeFile()" 
-                            class="text-red-600 hover:text-red-800">
-                        <i class="fas fa-times"></i>
-                    </button>
+        <!-- عرض الملف المختار -->
+        <div id="fileDisplay" class="mt-4 hidden">
+            <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                <div>
+                    <p id="fileName" class="font-medium"></p>
+                    <p id="fileSize" class="text-sm text-gray-600"></p>
                 </div>
+                <button onclick="removeFile()" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-
-            <!-- شريط التقدم -->
-            <div id="uploadProgress" class="hidden">
-                <div class="relative pt-1">
-                    <div class="flex mb-2 items-center justify-between">
-                        <div>
-                            <span id="progressText" class="text-xs font-semibold inline-block text-indigo-600">
-                                0%
-                            </span>
-                        </div>
-                        <div class="text-right">
-                            <span id="progressStatus" class="text-xs font-semibold inline-block text-indigo-600">
-                                جاري التحميل...
-                            </span>
-                        </div>
-                    </div>
-                    <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200">
-                        <div id="progressBar" 
-                             class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"
-                             style="width: 0%">
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- زر التحميل -->
-            <div class="flex justify-end">
-                <button id="uploadButton" 
-                        onclick="uploadFile()"
-                        class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed hidden">
-                    تحميل الملف
+            
+            <!-- أزرار التحميل والمعالجة -->
+            <div class="flex justify-end space-x-4 mt-4">
+                <button id="uploadButton" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 hidden">
+                    <i class="fas fa-upload mr-2"></i>تحميل الملف
+                </button>
+                <button id="processButton" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 hidden">
+                    <i class="fas fa-cogs mr-2"></i>معالجة البيانات
                 </button>
             </div>
         </div>
 
-        <!-- قسم المعالجة -->
-        <div id="processingSection" class="hidden space-y-4">
-            <div class="relative pt-1">
-                <div class="flex mb-2 items-center justify-between">
-                    <div>
-                        <span id="processingStatus" 
-                              class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-indigo-600 bg-indigo-200">
-                            جاري المعالجة
-                        </span>
-                    </div>
-                    <div class="text-right">
-                        <span id="progressPercentage" 
-                              class="text-xs font-semibold inline-block text-indigo-600">
-                            0%
-                        </span>
-                    </div>
-                </div>
-                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200">
-                    <div id="progressBar" 
-                         class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"
-                         style="width: 0%">
-                    </div>
-                </div>
+        <!-- شريط التقدم -->
+        <div id="uploadProgress" class="mt-4 hidden">
+            <div class="flex justify-between mb-1">
+                <span id="progressStatus" class="text-sm font-medium">جاري التحميل...</span>
+                <span id="progressText" class="text-sm font-medium">0%</span>
             </div>
-
-            <div id="processingSteps" class="space-y-2">
-                <div class="flex items-center space-x-2">
-                    <span class="processing-step" data-step="data-loading">⚪</span>
-                    <span>تحميل البيانات</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="processing-step" data-step="preprocessing">⚪</span>
-                    <span>المعالجة الأولية</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="processing-step" data-step="feature-engineering">⚪</span>
-                    <span>هندسة المميزات</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="processing-step" data-step="model-selection">⚪</span>
-                    <span>اختيار النموذج</span>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span class="processing-step" data-step="training">⚪</span>
-                    <span>تدريب النموذج</span>
-                </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
         </div>
     </div>
 
-    <!-- قسم الإحصائيات -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm text-gray-600">النماذج النشطة</p>
-                    <h3 id="activeModelsCount" class="text-2xl font-bold">{{ stats.active_models }}</h3>
+    <!-- قسم المعالجة -->
+    <div id="processingSection" class="bg-white shadow-lg rounded-lg p-6 hidden">
+        <h2 class="text-xl font-bold mb-6">معالجة البيانات</h2>
+        
+        <div class="space-y-6">
+            <!-- شريط التقدم -->
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-medium">التقدم الكلي</span>
+                    <span id="progressPercentage" class="text-sm font-medium">0%</span>
                 </div>
-                <div class="bg-green-100 p-2 rounded-lg">
-                    <i class="fas fa-cube text-green-600"></i>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="processingProgressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- خطوات المعالجة -->
+            <div id="processingSteps" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="processing-step" data-step="data-loading">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>تحميل البيانات</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="preprocessing">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>المعالجة الأولية</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="feature-engineering">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>هندسة المميزات</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="model-selection">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>اختيار النموذج</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="training">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>تدريب النموذج</span>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm text-gray-600">إجمالي التنبؤات</p>
-                    <h3 id="totalPredictions" class="text-2xl font-bold">{{ stats.total_predictions }}</h3>
-                </div>
-                <div class="bg-blue-100 p-2 rounded-lg">
-                    <i class="fas fa-chart-bar text-blue-600"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm text-gray-600">متوسط الدقة</p>
-                    <h3 id="averageAccuracy" class="text-2xl font-bold">{{ "%.1f"|format(stats.avg_accuracy * 100) }}%</h3>
-                </div>
-                <div class="bg-purple-100 p-2 rounded-lg">
-                    <i class="fas fa-bullseye text-purple-600"></i>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="text-sm text-gray-600">حالة النظام</p>
-                    <h3 id="systemHealth" class="text-2xl font-bold">{{ stats.system_health }}%</h3>
-                </div>
-                <div class="bg-yellow-100 p-2 rounded-lg">
-                    <i class="fas fa-heartbeat text-yellow-600"></i>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- إضافة قسم الروابط السريعة -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
-        <a href="/models" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div class="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-cube text-2xl text-indigo-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">النماذج</h3>
-            <p class="text-gray-600">إدارة وتحليل النماذج المدربة</p>
-        </a>
-
-        <a href="/predictions" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div class="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-magic text-2xl text-green-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">التنبؤات</h3>
-            <p class="text-gray-600">تنفيذ وإدارة التنبؤات</p>
-        </a>
-
-        <a href="/data/profile" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div class="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-database text-2xl text-purple-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">تحليل البيانات</h3>
-            <p class="text-gray-600">تحليل وتوصيف مجموعات البيانات</p>
-        </a>
-
-        <a href="/docs/api" class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
-            <div class="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
-                <i class="fas fa-book text-2xl text-blue-600"></i>
-            </div>
-            <h3 class="text-xl font-semibold mb-2">التوثيق</h3>
-            <p class="text-gray-600">دليل استخدام واجهة البرمجة</p>
-        </a>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    // تحديث الإحصائيات كل 30 ثانية
-    setInterval(updateStats, 30000);
-});
-
-async function updateStats() {
-    try {
-        const response = await fetch('/api/v1/stats');
-        const stats = await response.json();
-        
-        // تحديث العناصر
-        document.getElementById('activeModelsCount').textContent = stats.active_models;
-        document.getElementById('totalPredictions').textContent = stats.total_predictions;
-        document.getElementById('averageAccuracy').textContent = `${(stats.avg_accuracy * 100).toFixed(1)}%`;
-        document.getElementById('systemHealth').textContent = `${stats.system_health}%`;
-    } catch (error) {
-        console.error('Error updating stats:', error);
-    }
-}
-</script>
 {% endblock %}

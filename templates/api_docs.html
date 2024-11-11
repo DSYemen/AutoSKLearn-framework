@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}ML Framework - API Documentation{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-2xl font-bold mb-4">API Documentation</h1>
+        <p class="text-gray-600 mb-6">Complete documentation for the ML Framework API.</p>
+        
+        <!-- API Endpoints -->
+        <div class="space-y-6">
+            <!-- Models API -->
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Models API</h2>
+                <div class="space-y-4">
+                    <!-- List Models -->
+                    <div class="border rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">GET</span>
+                            <code class="text-sm">/api/v1/models</code>
+                        </div>
+                        <p class="text-gray-600 text-sm">Get a list of all models</p>
+                    </div>
+                    
+                    <!-- Create Model -->
+                    <div class="border rounded-lg p-4">
+                        <div class="flex items-center space-x-2 mb-2">
+                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">POST</span>
+                            <code class="text-sm">/api/v1/models</code>
+                        </div>
+                        <p class="text-gray-600 text-sm">Create a new model</p>
+                    </div>
+                    
+                    <!-- Other endpoints... -->
+                </div>
+            </div>
+            
+            <!-- Predictions API -->
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Predictions API</h2>
+                <!-- Add prediction endpoints -->
+            </div>
+            
+            <!-- Data Processing API -->
+            <div>
+                <h2 class="text-xl font-semibold mb-3">Data Processing API</h2>
+                <!-- Add data processing endpoints -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
