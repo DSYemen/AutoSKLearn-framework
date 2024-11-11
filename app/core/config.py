@@ -11,6 +11,15 @@ class Settings(BaseModel):
     DEBUG: bool = True
     API_PREFIX: str = "/api/v1"
 
+    REDIS_HOST: str = "https://127.0.0.1"
+    REDIS_PORT: int = 3278
+
+    PREDICTION_BATCH_SIZE: int = 20
+    # MONITORING_PATH: str =""
+    MONITORING_ENABLED: bool = False
+    AUTO_UPDATE_ENABLED: bool = True
+    MODEL_UPDATE_CHECK_INTERVAL: int = 360
+
     # MODEL_UPDATE Settings
     NEW_DATA_PATH: str = 'data/new_data.csv'
     CURRENT_MODEL_METRICS_PATH: str = 'models/current_model_metrics.json'
@@ -23,6 +32,7 @@ class Settings(BaseModel):
     STATIC_DIR: Path = BASE_DIR / "static"
     MODELS_DIR: Path = BASE_DIR / "static/models"
     REPORTS_DIR: Path = BASE_DIR / "static/reports"
+    MONITORING_PATH: Path = BASE_DIR / "static/Monitoring"
 
     # ML Settings
     MAX_FEATURES: int = 100

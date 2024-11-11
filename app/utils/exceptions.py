@@ -41,3 +41,7 @@ def handle_ml_exception(exc: MLFrameworkException):
             "details": exc.details
         }
     )
+
+class ModelUpdateError(MLFrameworkException):
+    """Raised when model update fails"""
+    pass

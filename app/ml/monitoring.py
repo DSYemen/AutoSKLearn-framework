@@ -13,7 +13,8 @@ class ModelMonitor:
         self.model_id = model_id
         self.monitoring_path = settings.MONITORING_PATH / model_id
         self.monitoring_path.mkdir(parents=True, exist_ok=True)
-        self.metrics_history = self._load_metrics_history()
+        # self.metrics_history = self._load_metrics_history()
+        self.metrics_history =  {"errors": [], "accuracy": []}
 
     def log_prediction(self, input_data: Dict[str, Any], prediction: Any,
                       actual: Any = None) -> None:
@@ -84,3 +85,9 @@ class ModelMonitor:
         """Analyze model performance trend"""
         # Implementation of performance trend analysis
         pass
+    
+    
+    def start_monitoring(self) -> None:
+        """Start monitoring the model"""
+        logger.info(f"Starting monitoring for model: {self.model_id}")
+        # يمكنك إضافة أي منطق إضافي هنا لبدء المراقبة

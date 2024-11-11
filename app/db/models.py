@@ -33,3 +33,23 @@ class MonitoringLog(Base):
     timestamp = Column(DateTime, server_default=func.now())
     metrics = Column(JSON)
     alerts = Column(JSON)
+
+class DatasetProfile(Base):
+    __tablename__ = "dataset_profiles"
+
+    id = Column(Integer, primary_key=True, index=True)
+    dataset_hash = Column(String, unique=True, index=True)
+    profile_path = Column(String)
+    created_at = Column(DateTime, server_default=func.now())
+    stats = Column(JSON)
+
+class TrainingJob(Base):
+    __tablename__ = "training_jobs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    model_id = Column(String, index=True)
+    status = Column(String)  # pending, running, completed, failed
+    started_at = Column(DateTime, server_default=func.now())
+    completed_at = Column(DateTime, nullable=True)
+    error_message = Column(String, nullable=True)
+    config = Column(JSON)

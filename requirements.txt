@@ -21,5 +21,6 @@ numba
 ydata-profiling
 xgboost
 lightgbm
+catboost
 pyyaml
 Jinja2
