@@ -5,6 +5,7 @@ numpy
 optuna
 pandas
 pydantic
+pydantic-settings
 python-multipart
 schedule
 scikit-learn
@@ -24,3 +25,6 @@ lightgbm
 catboost
 pyyaml
 Jinja2
+onnx
+aiofiles
+websockets

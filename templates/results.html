@@ -1,272 +1,299 @@
-{% extends "base.html" %} {% block title %}ML Framework - Results{% endblock %}
+{% extends "base.html" %}
+{% block title %}ML Framework - نتائج التدريب{% endblock %}
+
 {% block content %}
-<div class="space-y-6">
-  <!-- شريط التقدم -->
-  <div id="progressSection" class="bg-white shadow-lg rounded-lg p-6">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="text-lg font-semibold">حالة المعالجة</h3>
-      <span
-        id="progressPercentage"
-        class="text-sm font-medium bg-indigo-100 text-indigo-800 px-2 py-1 rounded-full"
-        >0%</span
-      >
-    </div>
-    <div class="relative pt-1">
-      <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-100">
-        <div
-          id="progressBar"
-          class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"
-          style="width: 0%"
-        ></div>
-      </div>
-    </div>
-    <p id="statusMessage" class="text-sm text-gray-600">
-      جاري تحليل البيانات...
-    </p>
-  </div>
-
-  <!-- ملخص النتائج -->
-  <div id="summarySection" class="bg-white shadow-lg rounded-lg p-6 hidden">
-    <div class="border-b pb-4 mb-4">
-      <h2 class="text-xl font-bold">ملخص النتائج</h2>
-      <p class="text-sm text-gray-600 mt-1">
-        تم تحليل البيانات وتدريب النموذج بنجاح
-      </p>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-gray-50 rounded-lg p-4">
-        <span class="text-sm text-gray-500">دقة النموذج</span>
-        <div class="flex items-end mt-1">
-          <span id="modelAccuracy" class="text-2xl font-bold">-</span>
-          <span class="text-sm text-gray-500 ml-1">%</span>
+<div class="space-y-8">
+    <!-- شريط الحالة -->
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="bg-indigo-100 p-3 rounded-lg">
+                    <i class="fas fa-chart-pie text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">نتائج التدريب</h1>
+                    <p class="text-gray-600">معرف النموذج: {{ model_id }}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="trainingStatus" class="px-3 py-1 rounded-full text-sm font-medium 
+                    {% if model_data.status == 'completed' %}
+                        bg-green-100 text-green-800
+                    {% elif model_data.status == 'failed' %}
+                        bg-red-100 text-red-800
+                    {% else %}
+                        bg-yellow-100 text-yellow-800
+                    {% endif %}">
+                    {{ model_data.status }}
+                </span>
+            </div>
         </div>
-      </div>
-      <div class="bg-gray-50 rounded-lg p-4">
-        <span class="text-sm text-gray-500">عدد المميزات</span>
-        <div class="mt-1">
-          <span id="featureCount" class="text-2xl font-bold">-</span>
+    </div>
+
+    <!-- شريط التقدم -->
+    <div id="progressSection" class="bg-white shadow-lg rounded-lg p-6 {% if model_data.status == 'completed' %}hidden{% endif %}">
+        <div class="space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-lg font-semibold">تقدم التدريب</h2>
+                <span id="progressPercentage" class="text-sm font-medium text-indigo-600">0%</span>
+            </div>
+            
+            <div class="relative pt-1">
+                <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200">
+                    <div id="progressBar" 
+                         class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-600 transition-all duration-500"
+                         style="width: 0%">
+                    </div>
+                </div>
+            </div>
+
+            <div id="processingSteps" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="processing-step" data-step="data-loading">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>تحميل البيانات</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="preprocessing">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>المعالجة الأولية</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="feature-engineering">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>هندسة المميزات</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="model-selection">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>اختيار النموذج</span>
+                    </div>
+                </div>
+                <div class="processing-step" data-step="training">
+                    <div class="flex items-center space-x-2">
+                        <span class="step-indicator">⚪</span>
+                        <span>تدريب النموذج</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-      <div class="bg-gray-50 rounded-lg p-4">
-        <span class="text-sm text-gray-500">وقت التدريب</span>
-        <div class="mt-1">
-          <span id="trainingTime" class="text-2xl font-bold">-</span>
+    </div>
+
+    <!-- نتائج التدريب -->
+    <div id="resultsSection" class="{% if model_data.status != 'completed' %}hidden{% endif %}">
+        <!-- بطاقات المقاييس -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-600">الدقة</p>
+                        <h3 class="text-2xl font-bold">{{ "%.2f"|format(model_data.metrics.accuracy * 100) }}%</h3>
+                    </div>
+                    <div class="bg-green-100 p-2 rounded-lg">
+                        <i class="fas fa-bullseye text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-600">F1 Score</p>
+                        <h3 class="text-2xl font-bold">{{ "%.2f"|format(model_data.metrics.f1 * 100) }}%</h3>
+                    </div>
+                    <div class="bg-blue-100 p-2 rounded-lg">
+                        <i class="fas fa-balance-scale text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-600">وقت التدريب</p>
+                        <h3 class="text-2xl font-bold">{{ model_data.training_time }}s</h3>
+                    </div>
+                    <div class="bg-purple-100 p-2 rounded-lg">
+                        <i class="fas fa-clock text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-sm text-gray-600">حجم النموذج</p>
+                        <h3 class="text-2xl font-bold">{{ model_data.model_size }}</h3>
+                    </div>
+                    <div class="bg-yellow-100 p-2 rounded-lg">
+                        <i class="fas fa-database text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- تفاصيل النموذج -->
-  <div
-    id="modelDetailsSection"
-    class="bg-white shadow-lg rounded-lg p-6 hidden"
-  >
-    <div class="border-b pb-4 mb-4">
-      <h2 class="text-xl font-bold">تفاصيل النموذج</h2>
-    </div>
+        <!-- المخططات -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- منحنى التعلم -->
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4">منحنى التعلم</h3>
+                <div id="learningCurvePlot" class="h-80"></div>
+            </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- مخطط أداء النموذج -->
-      <div class="bg-white rounded-lg border p-4">
-        <h3 class="text-lg font-semibold mb-4">أداء النموذج</h3>
-        <div id="modelPerformancePlot" class="h-64"></div>
-      </div>
-
-      <!-- مخطط أهمية المميزات -->
-      <div class="bg-white rounded-lg border p-4">
-        <h3 class="text-lg font-semibold mb-4">أهمية المميزات</h3>
-        <div id="featureImportancePlot" class="h-64"></div>
-      </div>
-    </div>
-
-    <!-- جدول المقاييس -->
-    <div class="mt-6">
-      <h3 class="text-lg font-semibold mb-4">مقاييس الأداء</h3>
-      <div class="bg-gray-50 rounded-lg p-4">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <span class="text-sm text-gray-500">Precision</span>
-            <p id="precisionMetric" class="text-lg font-semibold mt-1">-</p>
-          </div>
-          <div>
-            <span class="text-sm text-gray-500">Recall</span>
-            <p id="recallMetric" class="text-lg font-semibold mt-1">-</p>
-          </div>
-          <div>
-            <span class="text-sm text-gray-500">F1 Score</span>
-            <p id="f1Metric" class="text-lg font-semibold mt-1">-</p>
-          </div>
-          <div>
-            <span class="text-sm text-gray-500">ROC AUC</span>
-            <p id="rocAucMetric" class="text-lg font-semibold mt-1">-</p>
-          </div>
+            <!-- مصفوفة الارتباك -->
+            <div class="bg-white shadow-lg rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4">مصفوفة الارتباك</h3>
+                <div id="confusionMatrixPlot" class="h-80"></div>
+            </div>
         </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- أزرار الإجراءات -->
-  <div id="actionButtons" class="flex justify-end space-x-4 hidden">
-    <button
-      onclick="downloadReport()"
-      class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-    >
-      تحميل التقرير
-    </button>
-    <button
-      onclick="viewDashboard()"
-      class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-    >
-      عرض لوحة التحكم
-    </button>
-  </div>
+        <!-- أهمية المميزات -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-4">أهمية المميزات</h3>
+            <div id="featureImportancePlot" class="h-96"></div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="flex justify-end space-x-4">
+            <button onclick="viewDashboard()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                <i class="fas fa-chart-line mr-2"></i>عرض لوحة التحكم
+            </button>
+            <button onclick="downloadReport()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                <i class="fas fa-download mr-2"></i>تحميل التقرير
+            </button>
+        </div>
+    </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
-  let modelData = null;
-  let modelId = null;
+let modelId = '{{ model_id }}';
+let websocket = null;
 
-  document.addEventListener("DOMContentLoaded", () => {
-    // بدء عملية المعالجة
-    startProcessing();
-  });
+document.addEventListener('DOMContentLoaded', () => {
+    initializeResults();
+});
 
-  async function startProcessing() {
-    try {
-      const response = await fetch(`/api/v1/processing-status`);
-      const data = await response.json();
-
-      updateProgress(data.progress, data.status);
-
-      if (data.progress < 100) {
-        setTimeout(startProcessing, 1000);
-      } else {
-        await loadModelResults();
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      showError("حدث خطأ أثناء المعالجة");
+async function initializeResults() {
+    if ('{{ model_data.status }}' !== 'completed') {
+        setupWebSocket();
+    } else {
+        createPlots();
     }
-  }
+}
 
-  function updateProgress(progress, status) {
-    const progressBar = document.getElementById("progressBar");
-    const progressPercentage = document.getElementById("progressPercentage");
-    const statusMessage = document.getElementById("statusMessage");
+function setupWebSocket() {
+    websocket = new WebSocket(`ws://${window.location.host}/ws/processing/${modelId}`);
+    
+    websocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateProgress(data);
+    };
+    
+    websocket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        showError('حدث خطأ في الاتصال');
+    };
+}
 
-    progressBar.style.width = `${progress}%`;
-    progressPercentage.textContent = `${progress}%`;
-    if (status) {
-      statusMessage.textContent = status;
+function updateProgress(data) {
+    const { status, progress, message, step } = data;
+    
+    // تحديث شريط التقدم
+    document.getElementById('progressBar').style.width = `${progress}%`;
+    document.getElementById('progressPercentage').textContent = `${progress}%`;
+    
+    // تحديث الخطوات
+    updateSteps(step);
+    
+    // إذا اكتملت المعالجة
+    if (status === 'completed') {
+        handleTrainingComplete();
+    } else if (status === 'failed') {
+        handleTrainingError(message);
     }
-  }
+}
 
-  async function loadModelResults() {
-    try {
-      const response = await fetch(`/api/v1/models/${modelId}/results`);
-      modelData = await response.json();
+function updateSteps(currentStep) {
+    const steps = ['data-loading', 'preprocessing', 'feature-engineering', 'model-selection', 'training'];
+    const currentIndex = steps.indexOf(currentStep);
+    
+    steps.forEach((step, index) => {
+        const indicator = document.querySelector(`[data-step="${step}"] .step-indicator`);
+        if (index < currentIndex) {
+            indicator.textContent = '✅'; // مكتمل
+        } else if (index === currentIndex) {
+            indicator.textContent = '🔄'; // جاري
+        } else {
+            indicator.textContent = '⚪'; // قادم
+        }
+    });
+}
 
-      // إخفاء قسم التقدم وإظهار النتائج
-      document.getElementById("progressSection").classList.add("hidden");
-      document.getElementById("summarySection").classList.remove("hidden");
-      document.getElementById("modelDetailsSection").classList.remove("hidden");
-      document.getElementById("actionButtons").classList.remove("hidden");
+function createPlots() {
+    // منحنى التعلم
+    const learningCurveData = {
+        x: {{ model_data.learning_curve.train_sizes | tojson }},
+        y: {{ model_data.learning_curve.train_scores | tojson }},
+        name: 'Training Score',
+        type: 'scatter',
+        mode: 'lines+markers'
+    };
+    
+    Plotly.newPlot('learningCurvePlot', [learningCurveData], {
+        title: 'Learning Curve',
+        xaxis: { title: 'Training Examples' },
+        yaxis: { title: 'Score' }
+    });
 
-      updateUI();
-      createPlots();
-    } catch (error) {
-      console.error("Error:", error);
-      showError("حدث خطأ أثناء تحميل النتائج");
-    }
-  }
+    // مصفوفة الارتباك
+    const confusionMatrix = {{ model_data.confusion_matrix | tojson }};
+    const confusionMatrixData = [{
+        z: confusionMatrix,
+        type: 'heatmap',
+        colorscale: 'Viridis'
+    }];
+    
+    Plotly.newPlot('confusionMatrixPlot', confusionMatrixData, {
+        title: 'Confusion Matrix'
+    });
 
-  function updateUI() {
-    // تحديث الملخص
-    document.getElementById("modelAccuracy").textContent = (
-      modelData.metrics.accuracy * 100
-    ).toFixed(2);
-    document.getElementById("featureCount").textContent =
-      modelData.feature_count;
-    document.getElementById(
-      "trainingTime"
-    ).textContent = `${modelData.training_time}s`;
+    // أهمية المميزات
+    const featureImportance = {{ model_data.feature_importance | tojson }};
+    const featureImportanceData = [{
+        y: Object.keys(featureImportance),
+        x: Object.values(featureImportance),
+        type: 'bar',
+        orientation: 'h'
+    }];
+    
+    Plotly.newPlot('featureImportancePlot', featureImportanceData, {
+        title: 'Feature Importance',
+        xaxis: { title: 'Importance' },
+        yaxis: { title: 'Features' }
+    });
+}
 
-    // تحديث المقاييس
-    document.getElementById("precisionMetric").textContent =
-      modelData.metrics.precision.toFixed(4);
-    document.getElementById("recallMetric").textContent =
-      modelData.metrics.recall.toFixed(4);
-    document.getElementById("f1Metric").textContent =
-      modelData.metrics.f1.toFixed(4);
-    document.getElementById("rocAucMetric").textContent =
-      modelData.metrics.roc_auc.toFixed(4);
-  }
+function handleTrainingComplete() {
+    document.getElementById('progressSection').classList.add('hidden');
+    document.getElementById('resultsSection').classList.remove('hidden');
+    createPlots();
+}
 
-  function createPlots() {
-    // مخطط أداء النموذج
-    Plotly.newPlot(
-      "modelPerformancePlot",
-      [
-        {
-          x: modelData.learning_curve.train_sizes,
-          y: modelData.learning_curve.train_scores,
-          name: "Training Score",
-          type: "scatter",
-          mode: "lines+markers",
-        },
-        {
-          x: modelData.learning_curve.train_sizes,
-          y: modelData.learning_curve.test_scores,
-          name: "Validation Score",
-          type: "scatter",
-          mode: "lines+markers",
-        },
-      ],
-      {
-        margin: { t: 20 },
-        xaxis: { title: "Training Examples" },
-        yaxis: { title: "Score" },
-      }
-    );
+function handleTrainingError(message) {
+    showError(message);
+}
 
-    // مخطط أهمية المميزات
-    const featureImportance = modelData.feature_importance;
-    const features = Object.keys(featureImportance);
-    const importance = Object.values(featureImportance);
-
-    Plotly.newPlot(
-      "featureImportancePlot",
-      [
-        {
-          y: features,
-          x: importance,
-          type: "bar",
-          orientation: "h",
-          marker: {
-            color: "rgb(79, 70, 229)",
-          },
-        },
-      ],
-      {
-        margin: { l: 150, t: 20 },
-        xaxis: { title: "Importance" },
-      }
-    );
-  }
-
-  function showError(message) {
-    const statusMessage = document.getElementById("statusMessage");
-    statusMessage.textContent = message;
-    statusMessage.classList.add("text-red-600");
-  }
-
-  function downloadReport() {
-    window.location.href = `/api/v1/models/${modelId}/report/download`;
-  }
-
-  function viewDashboard() {
+window.viewDashboard = () => {
     window.location.href = `/dashboard/${modelId}`;
-  }
+};
+
+window.downloadReport = () => {
+    window.location.href = `/api/v1/models/${modelId}/report/download`;
+};
 </script>
 {% endblock %}

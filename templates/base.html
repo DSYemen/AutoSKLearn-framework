@@ -1,49 +1,154 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}ML Framework{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <link href="{{ url_for('static', path='/css/main.css') }}" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link
-      href="{{ url_for('static', path='/css/styles.css') }}"
-      rel="stylesheet"
-    />
-  </head>
-  <body class="bg-gray-100">
-    <!-- Navigation -->
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', path='/css/styles.css') }}" rel="stylesheet">
+    
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- شريط التنقل -->
     <nav class="bg-indigo-600 shadow-lg">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center">
-            <a href="/" class="text-white text-xl font-bold">ML Framework</a>
-          </div>
-          <div class="flex items-center space-x-4">
-            <a href="/dashboard" class="text-white hover:text-gray-200"
-              >Dashboard</a
-            >
-            <a href="/models" class="text-white hover:text-gray-200">Models</a>
-            <a href="/docs" class="text-white hover:text-gray-200"
-              >Documentation</a
-            >
-          </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- الشعار والعنوان -->
+                <div class="flex items-center">
+                    <a href="/" class="flex items-center space-x-3">
+                        <i class="fas fa-brain text-white text-2xl"></i>
+                        <span class="text-white text-xl font-bold">ML Framework</span>
+                    </a>
+                </div>
+                
+                <!-- روابط التنقل -->
+                <div class="hidden md:block">
+                    <div class="flex items-center space-x-4">
+                        <a href="/dashboard" class="text-white hover:text-gray-200 px-3 py-2 rounded-md">
+                            <i class="fas fa-chart-line ml-2"></i>لوحة التحكم
+                        </a>
+                        <a href="/models" class="text-white hover:text-gray-200 px-3 py-2 rounded-md">
+                            <i class="fas fa-cube ml-2"></i>النماذج
+                        </a>
+                        <a href="/data/profile" class="text-white hover:text-gray-200 px-3 py-2 rounded-md">
+                            <i class="fas fa-database ml-2"></i>تحليل البيانات
+                        </a>
+                        <a href="/predictions" class="text-white hover:text-gray-200 px-3 py-2 rounded-md">
+                            <i class="fas fa-magic ml-2"></i>التنبؤات
+                        </a>
+                        <a href="/docs/api" class="text-white hover:text-gray-200 px-3 py-2 rounded-md">
+                            <i class="fas fa-book ml-2"></i>التوثيق
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- زر القائمة للشاشات الصغيرة -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-white hover:text-gray-200">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- قائمة الشاشات الصغيرة -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1">
+                    <a href="/dashboard" class="text-white hover:text-gray-200 block px-3 py-2 rounded-md">
+                        <i class="fas fa-chart-line ml-2"></i>لوحة التحكم
+                    </a>
+                    <a href="/models" class="text-white hover:text-gray-200 block px-3 py-2 rounded-md">
+                        <i class="fas fa-cube ml-2"></i>النماذج
+                    </a>
+                    <a href="/docs/api" class="text-white hover:text-gray-200 block px-3 py-2 rounded-md">
+                        <i class="fas fa-book ml-2"></i>التوثيق
+                    </a>
+                </div>
+            </div>
         </div>
-      </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-      {% block content %}{% endblock %}
+    <!-- المحتوى الرئيسي -->
+    <main class="flex-grow container mx-auto px-4 py-8">
+        {% block content %}{% endblock %}
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white shadow-lg mt-8">
-      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <p class="text-center text-gray-600">ML Framework &copy; 2023</p>
-      </div>
+    <!-- التذييل -->
+    <footer class="bg-white shadow-lg mt-auto">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <p class="text-gray-600">ML Framework &copy; {{ year }}</p>
+                <div class="flex space-x-4">
+                    <a href="/about" class="text-gray-600 hover:text-gray-800">حول</a>
+                    <a href="/privacy" class="text-gray-600 hover:text-gray-800">الخصوصية</a>
+                    <a href="/contact" class="text-gray-600 hover:text-gray-800">اتصل بنا</a>
+                </div>
+            </div>
+        </div>
     </footer>
 
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- نافذة الأخطاء -->
+    <div id="error-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-red-600">خطأ</h3>
+                <button onclick="closeErrorModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p id="error-message" class="text-gray-700"></p>
+            <button onclick="closeErrorModal()" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                إغلاق
+            </button>
+        </div>
+    </div>
+
+    <!-- نافذة التحميل -->
+    <div id="loading-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg p-8 text-center">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
+            <p class="mt-4 text-gray-700">جاري التحميل...</p>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', path='/js/main.js') }}" type="module"></script>
     {% block scripts %}{% endblock %}
-  </body>
+
+    <script>
+        // التحكم في قائمة الشاشات الصغيرة
+        document.getElementById('mobile-menu-button').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        });
+
+        // دوال النوافذ المنبثقة
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-modal').classList.remove('hidden');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('error-modal').classList.add('hidden');
+        }
+
+        function showLoading() {
+            document.getElementById('loading-modal').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-modal').classList.add('hidden');
+        }
+    </script>
+</body>
 </html>

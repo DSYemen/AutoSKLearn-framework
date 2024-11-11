@@ -1,336 +1,296 @@
-{% extends "base.html" %} {% block title %}ML Framework - Dashboard{% endblock
-%} {% block content %}
+{% extends "base.html" %}
+{% block title %}ML Framework - لوحة التحكم{% endblock %}
+
+{% block content %}
 <div id="dashboard" class="space-y-6">
-  <!-- Overview Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <!-- شريط الحالة -->
+    <div class="bg-white shadow-lg rounded-lg p-4">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="bg-indigo-100 p-2 rounded-lg">
+                    <i class="fas fa-cube text-indigo-600 text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold">{{ model_data.name }}</h2>
+                    <p class="text-sm text-gray-600">معرف النموذج: {{ model_id }}</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="modelStatus" class="px-3 py-1 rounded-full text-sm font-medium 
+                    {% if model_data.status == 'active' %}
+                        bg-green-100 text-green-800
+                    {% elif model_data.status == 'training' %}
+                        bg-yellow-100 text-yellow-800
+                    {% else %}
+                        bg-red-100 text-red-800
+                    {% endif %}
+                ">
+                    {{ model_data.status }}
+                </span>
+                <button id="refreshButton" class="p-2 hover:bg-gray-100 rounded-lg" onclick="refreshDashboard()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- بطاقات المقاييس -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- الدقة -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-600">الدقة</p>
+                    <h3 id="accuracyValue" class="text-2xl font-bold">{{ "%.2f"|format(model_data.metrics.accuracy * 100) }}%</h3>
+                </div>
+                <div class="bg-green-100 p-2 rounded-lg">
+                    <i class="fas fa-bullseye text-green-600"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span id="accuracyTrend" class="text-sm {% if model_data.metrics.accuracy_trend > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+                    {% if model_data.metrics.accuracy_trend > 0 %}
+                        <i class="fas fa-arrow-up"></i>
+                    {% else %}
+                        <i class="fas fa-arrow-down"></i>
+                    {% endif %}
+                    {{ "%.1f"|format(abs(model_data.metrics.accuracy_trend)) }}%
+                </span>
+                <span class="text-sm text-gray-500">منذ آخر تحديث</span>
+            </div>
+        </div>
+
+        <!-- التنبؤات -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-600">التنبؤات</p>
+                    <h3 id="predictionsCount" class="text-2xl font-bold">{{ model_data.stats.total_predictions }}</h3>
+                </div>
+                <div class="bg-blue-100 p-2 rounded-lg">
+                    <i class="fas fa-chart-line text-blue-600"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span id="predictionsRate" class="text-sm text-gray-600">
+                    {{ model_data.stats.predictions_per_hour }}/ساعة
+                </span>
+            </div>
+        </div>
+
+        <!-- وقت التدريب -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-600">وقت التدريب</p>
+                    <h3 id="trainingTime" class="text-2xl font-bold">{{ model_data.stats.training_time }}s</h3>
+                </div>
+                <div class="bg-purple-100 p-2 rounded-lg">
+                    <i class="fas fa-clock text-purple-600"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span class="text-sm text-gray-600">آخر تحديث: {{ model_data.updated_at|datetime }}</span>
+            </div>
+        </div>
+
+        <!-- حالة النظام -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-sm text-gray-600">حالة النظام</p>
+                    <h3 id="systemHealth" class="text-2xl font-bold">{{ model_data.stats.system_health }}%</h3>
+                </div>
+                <div class="bg-yellow-100 p-2 rounded-lg">
+                    <i class="fas fa-heartbeat text-yellow-600"></i>
+                </div>
+            </div>
+            <div class="mt-2">
+                <span id="healthStatus" class="text-sm font-medium px-2 py-1 rounded-full
+                    {% if model_data.stats.health_status == 'Healthy' %}
+                        bg-green-100 text-green-800
+                    {% else %}
+                        bg-red-100 text-red-800
+                    {% endif %}
+                ">
+                    {{ model_data.stats.health_status }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- المخططات -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- منحنى الأداء -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">أداء النموذج</h3>
+            <div id="performancePlot" class="h-80"></div>
+        </div>
+
+        <!-- توزيع التنبؤات -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">توزيع التنبؤات</h3>
+            <div id="predictionsPlot" class="h-80"></div>
+        </div>
+    </div>
+
+    <!-- أهمية المميزات -->
     <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-gray-500 text-sm font-medium">Active Models</h3>
-      <p id="activeModels" class="text-3xl font-bold"></p>
-      <div class="mt-2 flex items-center text-sm">
-        <span id="newModels24h" class="text-green-500"></span>
-        <span class="ml-2 text-gray-600">from last 24h</span>
-      </div>
+        <h3 class="text-lg font-semibold mb-4">أهمية المميزات</h3>
+        <div id="featureImportancePlot" class="h-96"></div>
     </div>
 
+    <!-- جدول التنبؤات الأخيرة -->
     <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-gray-500 text-sm font-medium">Total Predictions</h3>
-      <p id="totalPredictions" class="text-3xl font-bold"></p>
-      <div class="mt-2 flex items-center text-sm">
-        <span id="predictionsPerHour" class="text-blue-500"></span>
-      </div>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-gray-500 text-sm font-medium">Average Accuracy</h3>
-      <p id="avgAccuracy" class="text-3xl font-bold"></p>
-      <div class="mt-2 flex items-center text-sm">
-        <span id="accuracyTrend"></span>
-        <span class="ml-2 text-gray-600">from last week</span>
-      </div>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-gray-500 text-sm font-medium">System Health</h3>
-      <p id="systemHealth" class="text-3xl font-bold"></p>
-      <div class="mt-2 flex items-center text-sm">
-        <span id="healthStatus"></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Performance Charts -->
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-    <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-lg font-semibold mb-4">Model Performance Trends</h3>
-      <div id="performance-trend-plot"></div>
-    </div>
-
-    <div class="bg-white shadow-lg rounded-lg p-6">
-      <h3 class="text-lg font-semibold mb-4">Prediction Distribution</h3>
-      <div id="prediction-distribution-plot"></div>
-    </div>
-  </div>
-
-  <!-- Active Models Table -->
-  <div class="bg-white shadow-lg rounded-lg p-6">
-    <h3 class="text-lg font-semibold mb-4">Active Models</h3>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead>
-          <tr>
-            <th
-              class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Model ID
-            </th>
-            <th
-              class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Type
-            </th>
-            <th
-              class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Accuracy
-            </th>
-            <th
-              class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Last Updated
-            </th>
-            <th
-              class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Status
-            </th>
-            <th class="px-6 py-3 bg-gray-50"></th>
-          </tr>
-        </thead>
-        <tbody id="modelsTable" class="bg-white divide-y divide-gray-200">
-          <!-- سيتم إدخال صفوف الجداول هنا بواسطة JavaScript -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Model Details Modal -->
-  <div
-    id="modelDetailsModal"
-    class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden"
-  >
-    <div
-      class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white"
-    >
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="text-lg font-semibold">Model Details</h3>
-        <button id="closeModalButton" class="text-gray-500 hover:text-gray-700">
-          <svg
-            class="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-
-      <div id="modelDetailsContent" class="space-y-4">
-        <!-- سيتم إدخال تفاصيل النموذج هنا بواسطة JavaScript -->
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %} {% block scripts %}
-<script src="{{ url_for('static', path='/js/main.js') }}"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const modelDetailsModal = document.getElementById("modelDetailsModal");
-    const closeModalButton = document.getElementById("closeModalButton");
-    const modelsTable = document.getElementById("modelsTable");
-
-    // إخفاء النافذة عند الضغط على زر الإغلاق
-    closeModalButton.addEventListener("click", () => {
-      modelDetailsModal.classList.add("hidden");
-    });
-
-    // تحديث صفحة الـ Dashboard بعد تحميل البيانات
-    function updateDashboard() {
-      const stats = appState.stats;
-
-      // تحديث الكروت الرئيسية
-      document.getElementById("activeModels").textContent = stats.active_models;
-      document.getElementById(
-        "newModels24h"
-      ).textContent = `↑ ${stats.new_models_24h}`;
-      document.getElementById("totalPredictions").textContent =
-        stats.total_predictions;
-      document.getElementById(
-        "predictionsPerHour"
-      ).textContent = `${stats.predictions_per_hour}/hour`;
-      document.getElementById("avgAccuracy").textContent = `${(
-        stats.avg_accuracy * 100
-      ).toFixed(1)}%`;
-      const accuracyTrend = document.getElementById("accuracyTrend");
-      accuracyTrend.textContent = `${
-        stats.accuracy_trend >= 0 ? "↑" : "↓"
-      } ${Math.abs(stats.accuracy_trend).toFixed(1)}%`;
-      accuracyTrend.classList.add(
-        stats.accuracy_trend >= 0 ? "text-green-500" : "text-red-500"
-      );
-      document.getElementById(
-        "systemHealth"
-      ).textContent = `${stats.system_health}%`;
-      const healthStatus = document.getElementById("healthStatus");
-      healthStatus.textContent = stats.health_status;
-      healthStatus.classList.add(
-        stats.health_status === "Healthy" ? "text-green-500" : "text-red-500"
-      );
-
-      // تحديث جدول النماذج
-      modelsTable.innerHTML = "";
-      appState.models.forEach((model) => {
-        const modelRow = document.createElement("tr");
-        modelRow.classList.add("hover:bg-gray-50");
-        modelRow.innerHTML = `
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm font-medium text-gray-900">${model.id}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">${model.type}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">${(model.accuracy * 100).toFixed(
-              2
-            )}%</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">${formatDate(
-              model.lastUpdated
-            )}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-              model.status === "Active"
-                ? "bg-green-100 text-green-800"
-                : model.status === "Training"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-red-100 text-red-800"
-            }">
-                ${model.status}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-            <button class="text-indigo-600 hover:text-indigo-900 view-details-button" data-model-id="${
-              model.id
-            }">
-              Details
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">التنبؤات الأخيرة</h3>
+            <button onclick="refreshPredictions()" class="text-indigo-600 hover:text-indigo-800">
+                <i class="fas fa-sync-alt"></i> تحديث
             </button>
-          </td>
-        `;
-        modelsTable.appendChild(modelRow);
-      });
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            التوقيت
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            المدخلات
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            التنبؤ
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            الثقة
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="predictionsTable" class="bg-white divide-y divide-gray-200">
+                    <!-- سيتم ملء الجدول بواسطة JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-      // إضافة مستمعين للأزرار "Details" لكل نموذج
-      document.querySelectorAll(".view-details-button").forEach((button) => {
-        button.addEventListener("click", (event) => {
-          const modelId = event.target.getAttribute("data-model-id");
-          viewModelDetails(modelId);
-        });
-      });
+    <!-- أزرار الإجراءات -->
+    <div class="flex justify-end space-x-4">
+        <button onclick="retrainModel()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+            <i class="fas fa-sync mr-2"></i>إعادة التدريب
+        </button>
+        <button onclick="exportModel()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+            <i class="fas fa-download mr-2"></i>تصدير النموذج
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// تهيئة لوحة التحكم
+async function initializeDashboard() {
+    try {
+        // تحميل البيانات الأولية
+        await fetchDashboardData();
+        
+        // إنشاء المخططات
+        createPerformancePlot();
+        createPredictionsPlot();
+        createFeatureImportancePlot();
+        
+        // تحديث الجدول
+        updatePredictionsTable();
+        
+        // بدء التحديث التلقائي
+        startAutoRefresh();
+    } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        showError('حدث خطأ أثناء تحميل لوحة التحكم');
     }
+}
 
-    // عرض تفاصيل النموذج
-    async function viewModelDetails(modelId) {
-      await fetchModelDetails(modelId); // استدعاء API لجلب تفاصيل النموذج
-      const selectedModel = appState.selectedModel;
+// جلب بيانات لوحة التحكم
+async function fetchDashboardData() {
+    const response = await fetch(`/api/v1/models/${modelId}/dashboard-data`);
+    if (!response.ok) throw new Error('فشل تحميل البيانات');
+    return await response.json();
+}
 
-      // عرض التفاصيل داخل النافذة
-      const content = `
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <h4 class="text-sm font-medium text-gray-500">Model ID</h4>
-            <p class="mt-1">${selectedModel.id}</p>
-          </div>
-          <div>
-            <h4 class="text-sm font-medium text-gray-500">Type</h4>
-            <p class="mt-1">${selectedModel.type}</p>
-          </div>
-          <div>
-            <h4 class="text-sm font-medium text-gray-500">Created At</h4>
-            <p class="mt-1">${formatDate(selectedModel.createdAt)}</p>
-          </div>
-          <div>
-            <h4 class="text-sm font-medium text-gray-500">Last Updated</h4>
-            <p class="mt-1">${formatDate(selectedModel.lastUpdated)}</p>
-          </div>
-        </div>
-        <div>
-          <h4 class="text-sm font-medium text-gray-500 mb-2">Performance Metrics</h4>
-          <div class="grid grid-cols-3 gap-4">
-            ${Object.entries(selectedModel.metrics)
-              .map(
-                ([metric, value]) => `
-              <div class="bg-gray-50 p-3 rounded-lg">
-                <div class="text-sm text-gray-500">${formatMetricName(
-                  metric
-                )}</div>
-                <div class="text-lg font-semibold">${formatMetricValue(
-                  value
-                )}</div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
-        </div>
-        <div>
-          <h4 class="text-sm font-medium text-gray-500 mb-2">Feature Importance</h4>
-          <div id="feature-importance-plot"></div>
-        </div>
-        <div class="flex justify-end space-x-3 mt-4">
-          <button id="retrainModelButton" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-            Retrain Model
-          </button>
-          <button id="downloadModelButton" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
-            Download Model
-          </button>
-        </div>
-      `;
+// إنشاء المخططات
+function createPerformancePlot() {
+    const trace = {
+        x: dashboardData.performance.timestamps,
+        y: dashboardData.performance.accuracy,
+        type: 'scatter',
+        mode: 'lines+markers',
+        name: 'الدقة'
+    };
+    
+    const layout = {
+        title: 'أداء النموذج عبر الزمن',
+        xaxis: { title: 'الوقت' },
+        yaxis: { title: 'الدقة' }
+    };
+    
+    Plotly.newPlot('performancePlot', [trace], layout);
+}
 
-      const modelDetailsContent = document.getElementById(
-        "modelDetailsContent"
-      );
-      modelDetailsContent.innerHTML = content;
+// تحديث الجدول
+function updatePredictionsTable() {
+    const tbody = document.getElementById('predictionsTable');
+    tbody.innerHTML = dashboardData.recent_predictions.map(pred => `
+        <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                ${formatDate(pred.timestamp)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                ${JSON.stringify(pred.input)}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                ${pred.prediction}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                ${(pred.confidence * 100).toFixed(2)}%
+            </td>
+        </tr>
+    `).join('');
+}
 
-      // إظهار النافذة
-      modelDetailsModal.classList.remove("hidden");
+// دوال المساعدة
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleString('ar-SA');
+}
 
-      // إضافة مستمعين لأزرار "Retrain" و"Download"
-      document
-        .getElementById("retrainModelButton")
-        .addEventListener("click", () => {
-          retrainModel(selectedModel.id);
+function startAutoRefresh() {
+    setInterval(async () => {
+        await fetchDashboardData();
+        updateDashboard();
+    }, 30000); // تحديث كل 30 ثانية
+}
+
+// تصدير الدوال
+window.refreshDashboard = async function() {
+    await fetchDashboardData();
+    updateDashboard();
+};
+
+window.retrainModel = async function() {
+    try {
+        const response = await fetch(`/api/v1/models/${modelId}/retrain`, {
+            method: 'POST'
         });
-      document
-        .getElementById("downloadModelButton")
-        .addEventListener("click", () => {
-          downloadModel(selectedModel.id);
-        });
-
-      // تحديث مخطط ميزة الأهمية (Feature Importance)
-      updateFeatureImportancePlot(selectedModel.featureImportance);
+        if (!response.ok) throw new Error('فشل إعادة التدريب');
+        showSuccess('تم بدء إعادة التدريب بنجاح');
+    } catch (error) {
+        showError('حدث خطأ أثناء إعادة التدريب');
     }
+};
 
-    // تحديث مخطط ميزة الأهمية
-    function updateFeatureImportancePlot(featureImportance) {
-      const data = [
-        {
-          type: "bar",
-          x: featureImportance.map((item) => item.value),
-          y: featureImportance.map((item) => item.feature),
-          orientation: "h",
-        },
-      ];
+window.exportModel = async function() {
+    window.location.href = `/api/v1/models/${modelId}/export`;
+};
 
-      const layout = {
-        title: "Feature Importance",
-        xaxis: { title: "Importance" },
-        yaxis: { title: "Features" },
-      };
-
-      Plotly.newPlot("feature-importance-plot", data, layout);
-    }
-
-    // استدعاء تحديثات الـ Dashboard عند تحميل البيانات
-    fetchDashboardData().then(() => {
-      updateDashboard();
-    });
-  });
+// تهيئة لوحة التحكم عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', initializeDashboard);
 </script>
 {% endblock %}

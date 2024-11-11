@@ -21,6 +21,8 @@ class ModelUpdater:
     """محدث النماذج التلقائي مع مراقبة الأداء"""
     
     def __init__(self):
+        self.settings = settings
+        self.settings.create_required_directories()
         self.alert_system = AlertSystem()
         self.last_update: Optional[datetime] = None
         self.update_history: Dict[str, list] = {
@@ -31,12 +33,11 @@ class ModelUpdater:
         self.current_performance: Dict[str, float] = {}
 
     async def start(self):
-        """بدء عملية التحديث التلقائي"""
-        logger.info("بدء خدمة تحديث النماذج التلقائي")
+        """بدء دورة تحديث النماذج"""
         while True:
             try:
                 await self._check_and_update_models()
-                await asyncio.sleep(settings.MODEL_UPDATE_CHECK_INTERVAL)
+                await asyncio.sleep(self.settings.MODEL_UPDATE_CHECK_INTERVAL)
             except Exception as e:
                 logger.error(f"خطأ في دورة تحديث النماذج: {str(e)}")
                 await asyncio.sleep(60)  # انتظار قبل المحاولة مرة أخرى

@@ -13,6 +13,7 @@ from app.core.logging_config import logger
 from app.core.config import settings
 from app.utils.alerts import AlertSystem
 from app.utils.exceptions import TrainingError
+from app.ml.model_validation import ModelValidator
 
 class ModelTrainer:
     """مدرب النموذج المتقدم مع دعم للمراقبة والتتبع"""
@@ -245,4 +246,4 @@ class ModelTrainer:
             
         except Exception as e:
             logger.error(f"خطأ في تحديث النموذج: {str(e)}")
-            raise TrainingError(f"فشل تحديث النموذج: {str(e)}")
+            raise TrainingError(f"فشل ت��ديث النموذج: {str(e)}")

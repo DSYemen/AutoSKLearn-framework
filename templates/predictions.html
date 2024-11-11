@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}ML Framework - التنبؤات{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- نموذج التنبؤ -->
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <h2 class="text-xl font-bold mb-6">تنفيذ تنبؤ جديد</h2>
+        
+        <!-- اختيار النموذج -->
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">اختر النموذج</label>
+            <select id="modelSelect" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <option value="">اختر نموذجاً...</option>
+            </select>
+        </div>
+
+        <!-- إدخال البيانات -->
+        <div id="featuresForm" class="space-y-4">
+            <!-- سيتم إنشاء حقول الإدخال ديناميكياً -->
+        </div>
+
+        <!-- زر التنبؤ -->
+        <button id="predictButton" 
+                class="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                disabled>
+            <i class="fas fa-magic mr-2"></i>تنفيذ التنبؤ
+        </button>
+    </div>
+
+    <!-- نتيجة التنبؤ -->
+    <div id="predictionResult" class="bg-white shadow-lg rounded-lg p-6 hidden">
+        <h3 class="text-lg font-semibold mb-4">نتيجة التنبؤ</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-600">التنبؤ</p>
+                <p id="predictionValue" class="text-2xl font-bold"></p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-600">الثقة</p>
+                <p id="confidenceValue" class="text-2xl font-bold"></p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="text-sm text-gray-600">وقت التنفيذ</p>
+                <p id="executionTime" class="text-2xl font-bold"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- سجل التنبؤات -->
+    <div class="bg-white shadow-lg rounded-lg p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold">سجل التنبؤات</h3>
+            <button onclick="refreshPredictionHistory()" class="text-indigo-600 hover:text-indigo-800">
+                <i class="fas fa-sync-alt"></i> تحديث
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                    <tr>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            التوقيت
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            النموذج
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            المدخلات
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            التنبؤ
+                        </th>
+                        <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            الثقة
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="predictionsHistory" class="bg-white divide-y divide-gray-200">
+                    <!-- سيتم ملء السجل ديناميكياً -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    loadModels();
+    loadPredictionHistory();
+    setupEventListeners();
+});
+
+async function loadModels() {
+    try {
+        const response = await fetch('/api/v1/models');
+        const models = await response.json();
+        
+        const select = document.getElementById('modelSelect');
+        select.innerHTML = '<option value="">اختر نموذجاً...</option>' +
+            models.map(model => `
+                <option value="${model.id}">${model.name}</option>
+            `).join('');
+            
+        select.addEventListener('change', loadModelFeatures);
+    } catch (error) {
+        showError('فشل تحميل النماذج');
+    }
+}
+
+async function loadModelFeatures() {
+    const modelId = document.getElementById('modelSelect').value;
+    if (!modelId) return;
+    
+    try {
+        const response = await fetch(`/api/v1/models/${modelId}/features`);
+        const features = await response.json();
+        
+        const form = document.getElementById('featuresForm');
+        form.innerHTML = features.map(feature => `
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">${feature.name}</label>
+                <input type="${feature.type === 'numeric' ? 'number' : 'text'}"
+                       name="${feature.name}"
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                       ${feature.required ? 'required' : ''}>
+            </div>
+        `).join('');
+        
+        document.getElementById('predictButton').disabled = false;
+    } catch (error) {
+        showError('فشل تحميل خصائص النموذج');
+    }
+}
+
+async function executePrediction() {
+    const modelId = document.getElementById('modelSelect').value;
+    const features = {};
+    
+    // جمع المدخلات
+    document.querySelectorAll('#featuresForm input').forEach(input => {
+        features[input.name] = input.type === 'number' ? Number(input.value) : input.value;
+    });
+    
+    try {
+        showLoading();
+        
+        const response = await fetch(`/api/v1/predict/${modelId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ features })
+        });
+        
+        if (!response.ok) throw new Error('فشل التنبؤ');
+        
+        const result = await response.json();
+        showPredictionResult(result);
+        await loadPredictionHistory();
+        
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function showPredictionResult(result) {
+    document.getElementById('predictionResult').classList.remove('hidden');
+    document.getElementById('predictionValue').textContent = result.prediction;
+    document.getElementById('confidenceValue').textContent = `${(result.confidence * 100).toFixed(2)}%`;
+    document.getElementById('executionTime').textContent = `${result.execution_time}ms`;
+}
+
+async function loadPredictionHistory() {
+    try {
+        const response = await fetch('/api/v1/predictions/history');
+        const history = await response.json();
+        
+        document.getElementById('predictionsHistory').innerHTML = history.map(pred => `
+            <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${formatDate(pred.timestamp)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${pred.model_name}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${JSON.stringify(pred.input)}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${pred.prediction}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${(pred.confidence * 100).toFixed(2)}%
+                </td>
+            </tr>
+        `).join('');
+    } catch (error) {
+        showError('فشل تحميل سجل التنبؤات');
+    }
+}
+
+function setupEventListeners() {
+    document.getElementById('predictButton').addEventListener('click', executePrediction);
+}
+
+function formatDate(dateString) {
+    return new Date(dateString).toLocaleString('ar-SA');
+}
+</script>
+{% endblock %} 

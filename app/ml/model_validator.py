@@ -1,120 +1,176 @@
 # app/ml/model_validator.py
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import numpy as np
-from sklearn.model_selection import cross_val_score
+from datetime import datetime
 from app.core.logging_config import logger
+from app.schemas.model import DataValidationResult
+from sklearn.model_selection import cross_val_score
+import pandas as pd
 
 class ModelValidator:
-    def __init__(self):
-        self.validation_results = {}
+    """فئة للتحقق من صحة النماذج"""
 
-    def validate_model(self, 
-                      model: Any,
-                      X: np.ndarray,
-                      y: np.ndarray,
-                      problem_type: str) -> Dict[str, Any]:
+    async def validate_model(
+        self,
+        model: Any,
+        cv_config: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
-        Comprehensive model validation
+        التحقق المتقاطع للنموذج
         """
         try:
-            validation_results = {
-                "cross_validation": self._perform_cross_validation(model, X, y, problem_type),
-                "stability": self._check_model_stability(model, X, y),
-                "assumptions": self._check_assumptions(model, X, y, problem_type),
-                "robustness": self._check_robustness(model, X, y)
-            }
+            # استخراج البيانات من التكوين
+            X = cv_config.get('X')
+            y = cv_config.get('y')
+            cv = cv_config.get('cv', 5)
+            scoring = cv_config.get('scoring', 'accuracy')
 
-            self.validation_results = validation_results
-            return validation_results
+            # التحقق المتقاطع
+            scores = cross_val_score(model, X, y, cv=cv, scoring=scoring)
+
+            return {
+                'scores': scores.tolist(),
+                'mean_score': scores.mean(),
+                'std_score': scores.std(),
+                'cv_folds': cv,
+                'scoring': scoring
+            }
 
         except Exception as e:
             logger.error(f"Error in model validation: {str(e)}")
             raise
 
-    def _perform_cross_validation(self,
-                                model: Any,
-                                X: np.ndarray,
-                                y: np.ndarray,
-                                problem_type: str) -> Dict[str, float]:
+    async def validate_data(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
-        Perform cross-validation with multiple metrics
+        التحقق من صحة البيانات
         """
-        metrics = ['accuracy'] if problem_type == 'classification' else ['neg_mean_squared_error']
-        cv_results = {}
-
-        for metric in metrics:
-            scores = cross_val_score(model, X, y, cv=5, scoring=metric)
-            cv_results[metric] = {
-                'mean': scores.mean(),
-                'std': scores.std(),
-                'scores': scores.tolist()
+        try:
+            validation_results = {
+                'is_valid': True,
+                'errors': [],
+                'warnings': [],
+                'stats': {},
+                'recommendations': []
             }
 
-        return cv_results
+            # التحقق من القيم المفقودة
+            missing_stats = df.isnull().sum()
+            if missing_stats.any():
+                validation_results['warnings'].append(
+                    "Dataset contains missing values"
+                )
+                validation_results['recommendations'].append(
+                    "Consider imputing missing values"
+                )
 
-    def _check_model_stability(self,
-                             model: Any,
-                             X: np.ndarray,
-                             y: np.ndarray) -> Dict[str, float]:
+            # التحقق من القيم الشاذة
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            for col in numeric_cols:
+                Q1 = df[col].quantile(0.25)
+                Q3 = df[col].quantile(0.75)
+                IQR = Q3 - Q1
+                outliers = ((df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))).sum()
+                if outliers > 0:
+                    validation_results['warnings'].append(
+                        f"Column {col} contains {outliers} outliers"
+                    )
+
+            # التحقق من التوازن في المتغيرات الفئوية
+            categorical_cols = df.select_dtypes(include=['object', 'category']).columns
+            for col in categorical_cols:
+                value_counts = df[col].value_counts()
+                if (value_counts / len(df)).max() > 0.95:
+                    validation_results['warnings'].append(
+                        f"Column {col} is highly imbalanced"
+                    )
+
+            # إحصائيات عامة
+            validation_results['stats'] = {
+                'rows': len(df),
+                'columns': len(df.columns),
+                'missing_values': missing_stats.to_dict(),
+                'dtypes': df.dtypes.astype(str).to_dict()
+            }
+
+            return validation_results
+
+        except Exception as e:
+            logger.error(f"Error in data validation: {str(e)}")
+            raise
+
+    def validate_predictions(
+        self,
+        predictions: np.ndarray,
+        actual: Optional[np.ndarray] = None
+    ) -> Dict[str, Any]:
         """
-        Check model stability across different subsets
+        التحقق من صحة التنبؤات
         """
-        stability_scores = []
-        n_splits = 5
+        try:
+            validation_results = {
+                'is_valid': True,
+                'errors': [],
+                'warnings': [],
+                'stats': {}
+            }
 
-        for _ in range(n_splits):
-            # Random subsample
-            indices = np.random.choice(len(X), size=int(len(X)*0.8), replace=False)
-            X_subset = X[indices]
-            y_subset = y[indices]
+            # التحقق من القيم غير الصالحة
+            if np.isnan(predictions).any():
+                validation_results['errors'].append("Predictions contain NaN values")
+                validation_results['is_valid'] = False
 
-            # Train and score
-            model.fit(X_subset, y_subset)
-            score = model.score(X[~indices], y[~indices])
-            stability_scores.append(score)
+            if np.isinf(predictions).any():
+                validation_results['errors'].append("Predictions contain infinite values")
+                validation_results['is_valid'] = False
 
-        return {
-            'mean_score': np.mean(stability_scores),
-            'score_std': np.std(stability_scores),
-            'stability_index': 1 - np.std(stability_scores) / np.mean(stability_scores)
-        }
+            # إحصائيات التنبؤات
+            validation_results['stats'] = {
+                'min': float(np.min(predictions)),
+                'max': float(np.max(predictions)),
+                'mean': float(np.mean(predictions)),
+                'std': float(np.std(predictions))
+            }
 
-    def _check_assumptions(self,
-                         model: Any,
-                         X: np.ndarray,
-                         y: np.ndarray,
-                         problem_type: str) -> Dict[str, Any]:
+            # التحقق من الدقة إذا كانت القيم الفعلية متوفرة
+            if actual is not None:
+                accuracy = np.mean(predictions == actual)
+                validation_results['stats']['accuracy'] = float(accuracy)
+
+            return validation_results
+
+        except Exception as e:
+            logger.error(f"Error in predictions validation: {str(e)}")
+            raise
+
+    def validate_model_performance(
+        self,
+        metrics: Dict[str, float],
+        thresholds: Dict[str, float]
+    ) -> Dict[str, Any]:
         """
-        Check model assumptions based on problem type
+        التحقق من أداء النموذج
         """
-        assumptions = {}
+        try:
+            validation_results = {
+                'is_valid': True,
+                'errors': [],
+                'warnings': [],
+                'metrics_status': {}
+            }
 
-        if problem_type == 'regression':
-            # Check linearity
-            predictions = model.predict(X)
-            residuals = y - predictions
+            for metric, value in metrics.items():
+                if metric in thresholds:
+                    threshold = thresholds[metric]
+                    if value < threshold:
+                        validation_results['warnings'].append(
+                            f"{metric} ({value:.4f}) is below threshold ({threshold})"
+                        )
+                        validation_results['metrics_status'][metric] = 'warning'
+                    else:
+                        validation_results['metrics_status'][metric] = 'ok'
 
-            assumptions['normality'] = self._check_normality(residuals)
-            assumptions['homoscedasticity'] = self._check_homoscedasticity(predictions, residuals)
+            return validation_results
 
-        return assumptions
-
-    def _check_robustness(self,
-                         model: Any,
-                         X: np.ndarray,
-                         y: np.ndarray) -> Dict[str, float]:
-        """
-        Check model robustness to noise and perturbations
-        """
-        # Add small noise to features
-        X_noisy = X + np.random.normal(0, 0.1, X.shape)
-
-        # Compare performance
-        original_score = model.score(X, y)
-        noisy_score = model.score(X_noisy, y)
-
-        return {
-            'original_score': original_score,
-            'noisy_score': noisy_score,
-            'robustness_score': noisy_score / original_score
-        }
+        except Exception as e:
+            logger.error(f"Error in performance validation: {str(e)}")
+            raise

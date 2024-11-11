@@ -26,3 +26,4 @@ preprocessing:
 monitoring:
   update_interval: 86400  # 24 hours
   performance_threshold: 0.8
+  monitoring_interval: 60  # بالثواني
