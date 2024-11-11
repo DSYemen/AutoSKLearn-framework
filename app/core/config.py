@@ -11,8 +11,8 @@ class Settings(BaseModel):
     DEBUG: bool = True
     API_PREFIX: str = "/api/v1"
 
-    REDIS_HOST: str = "https://127.0.0.1"
-    REDIS_PORT: int = 3278
+    REDIS_HOST: str = "redis://localhost"
+    REDIS_PORT: int = 6380
 
     PREDICTION_BATCH_SIZE: int = 20
     # MONITORING_PATH: str =""
